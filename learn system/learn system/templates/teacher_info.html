@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>首页</title>
+    <meta charset="utf-8">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <style>
+    .sidebar {
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .sidebar li {
+      margin-bottom: 10px;
+    }
+
+    .sidebar li a {
+      color: #333;
+      display: block;
+      text-decoration: none;
+    }
+
+    .sidebar li a:hover,
+    .sidebar li:hover > a {
+      color: #666;
+    }
+
+    .sidebar .dropdown-menu {
+      display: none;
+    }
+
+    .sidebar li:hover .dropdown-menu {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-3 sidebar">
+        <ul class="nav nav-pills nav-stacked">
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">菜单一<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">子菜单1</a></li>
+              <li><a href="#">子菜单2</a></li>
+              <li><a href="#">子菜单3</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">菜单二<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">子菜单4</a></li>
+              <li><a href="#">子菜单5</a></li>
+              <li><a href="#">子菜单6</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">菜单三<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">子菜单7</a></li>
+              <li><a href="#">子菜单8</a></li>
+              <li><a href="#">子菜单9</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="col-md-9">
+        <div id="content">
+
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
