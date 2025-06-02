@@ -2,11 +2,38 @@
 {% load bootstrap3 %}
 
 {% block content %}
-<h1>你好登录</h1>
-<form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <input type="submit" value="登录" class="btn btn-primary">
-</form>
-<p>如果你还没有账号，请先<a href="{% url 'register' 'student' %}">学生注册</a>或<a href="{% url 'register' 'teacher' %}">老师注册</a>。</p>
+<div class="center-wrapper">
+    <div class="login-container">
+        <h2 class="mb-4" style="color: var(--primary-color);">登录</h2>
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="text" name="username" class="form-control" placeholder="用户名" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" class="form-control" placeholder="密码" required>
+            </div>
+            <div class="login-links">
+                <a href="#" style="color: var(--primary-color);">忘记密码？</a>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">登录</button>
+            </div>
+            <div class="register-links">
+                还没有账号？ 
+                <a href="{% url 'register' 'student' %}" style="color: var(--primary-color);">学生注册</a> | 
+                <a href="{% url 'register' 'teacher' %}" style="color: var(--primary-color);">教师注册</a>
+            </div>
+        </form>
+       
+    </div>
+</div>
+
+<div class="footer">
+    © 2024 选课系统. All rights reserved.
+</div>
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+{% endblock %}
 {% endblock %}
