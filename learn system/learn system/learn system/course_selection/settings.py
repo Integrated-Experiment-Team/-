@@ -87,9 +87,14 @@ WSGI_APPLICATION = 'course_selection.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    'ENGINE': 'django.db.backends.mysql',	# Django的引擎，还可以用Oracle等
+    'NAME': 'learn_system',	# 数据库名
+    'USER': 'root',		# 用户名
+    'PASSWORD': 'root',	# 密码
+    'HOST': 'localhost',			# 数据库服务器地址
+    'PORT': 3306,		# 端口号（MySQL默认3306）
     }
+
 }
 
 
