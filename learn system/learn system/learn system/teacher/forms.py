@@ -13,6 +13,12 @@ class TeacherRegisterForm(UserCreationForm):
         model = User
         fields = ('username', 'password1', 'password2', 'name', 'teacher_id', 'college', 'contact')
 
+    def clean_teacher_id(self):
+        teacher_id = self.cleaned_data['teacher_id']
+        if TeacherProfile.objects.filter(teacher_id=teacher_id).exists():
+            raise forms.ValidationError('该工号已被注册，请更换工号。')
+        return teacher_id
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['username'] + '@example.com'

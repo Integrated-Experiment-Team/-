@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .forms import CourseCreateForm
-from .models import TeacherProfile
+from .forms import CourseCreateForm, TeacherInfoForm
+from .models import TeacherProfile, Course
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -14,9 +14,23 @@ def teacher_home(request):
     except TeacherProfile.DoesNotExist:
         # 如果没有教师信息，重定向到创建教师信息的页面
         return redirect('teacher_create_profile')
+    # 查询该教师所创建的所有课程
+    courses = Course.objects.filter(teacher=teacher_profile)
     # 如果有教师信息，渲染教师主页模板
-    return render(request, 'teacher_home.html', {'teacher_profile': teacher_profile})
+    return render(request, 'teacher_home.html', {'teacher_profile': teacher_profile, 'courses': courses})
 
+@login_required
+def teacher_create_profile(request):
+    if request.method == 'POST':
+        form = TeacherInfoForm(request.POST)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            return redirect('teacher_home')
+    else:
+        form = TeacherInfoForm()
+    return render(request, 'teacher_info.html', {'form': form})
 
 def teacher_course_create(request):
     if request.method == 'POST':
