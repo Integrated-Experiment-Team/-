@@ -1,57 +1,357 @@
 {% extends 'base.html' %}
-{% load bootstrap3 %}
+
+{% block title %}注册 - 智学平台{% endblock %}
 
 {% block content %}
-<div class="center-wrapper">
-    <div class="login-container">
-        <h2 class="mb-4" style="color: var(--primary-color);">注册</h2>
-        {% if error_message %}
-            <div class="alert alert-danger">{{ error_message }}</div>
-        {% endif %}
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
+<div class="register-container">
+    <div class="container-fluid h-100">
+        <div class="row min-vh-100 g-0">
+            <!-- 左侧装饰区域 - 仅在大屏幕显示 -->
+            <div class="col-xl-5 d-none d-xl-flex register-left-panel">
+                <div class="d-flex flex-column justify-content-center align-items-center text-white p-5 w-100">
+                    <div class="mb-4">
+                        <i class="fas fa-graduation-cap" style="font-size: 4rem;"></i>
+                    </div>
+                    <h1 class="display-5 fw-bold mb-3">智学平台</h1>
+                    <p class="lead text-center mb-4">开启您的学习之旅，探索知识的无限可能</p>
+                    <div class="feature-list">
+                        <div class="feature-item mb-3">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <span>个性化学习体验</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <span>专业教师指导</span>
+                        </div>
+                        <div class="feature-item mb-3">
+                            <i class="fas fa-check-circle me-3"></i>
+                            <span>实时学习进度跟踪</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        {% endif %}
-        <form method="post" action="">
-            {% csrf_token %}
-            {% for field in form %}
-            <input type="{{ field.field.widget.input_type }}" 
-                   name="{{ field.name }}" 
-                   class="form-control" 
-                   placeholder="{{ field.label }}" 
-                   {% if field.field.required %}required{% endif %}>
-            {% endfor %}
-            
-            <button type="submit" class="btn btn-primary">注册</button>
-            
-            <div class="register-links">
-                已有账号？ 
-                <a href="{% url 'login' %}" style="color: var(--primary-color);">立即登录</a>
+
+            <!-- 注册表单区域 - 在所有屏幕尺寸下居中 -->
+            <div class="col-xl-7 col-12 d-flex align-items-center justify-content-center py-5">
+                <div class="register-form-container w-100 d-flex justify-content-center">
+                    <div class="form-wrapper">
+                        <div class="card-custom p-4 p-md-5">
+                            <!-- Logo和标题 -->
+                            <div class="text-center mb-5">
+                                <div class="mb-4 d-xl-none">
+                                    <i class="fas fa-graduation-cap" style="font-size: 3.5rem; color: var(--secondary-color);"></i>
+                                </div>
+                                <h2 class="fw-bold mb-3" style="color: var(--text-primary);">
+                                    <span class="d-xl-none">加入智学平台</span>
+                                    <span class="d-none d-xl-inline">创建账户</span>
+                                </h2>
+                                <p class="text-muted">填写以下信息完成注册</p>
+                            </div>
+
+                                <!-- 错误信息 -->
+                                {% if error_message %}
+                                    <div class="alert-custom alert-error mb-4">
+                                        {{ error_message }}
+                                    </div>
+                                {% endif %}
+
+                                {% if form.errors %}
+                                    <div class="alert-custom alert-error mb-4">
+                                        {% for field in form %}
+                                            {% for error in field.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        {% endfor %}
+                                        {% for error in form.non_field_errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+
+                                <!-- 注册表单 -->
+                                <form method="post" action="" class="needs-validation" novalidate>
+                                    {% csrf_token %}
+
+                                    {% for field in form %}
+                                        <div class="form-group mb-4">
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-medium mb-2" style="color: var(--text-secondary);">
+                                                {% if field.name == 'username' %}
+                                                    <i class="fas fa-user me-2"></i>Username
+                                                {% elif field.name == 'email' %}
+                                                    <i class="fas fa-envelope me-2"></i>Email
+                                                {% elif field.name == 'password1' %}
+                                                    <i class="fas fa-lock me-2"></i>Password
+                                                {% elif field.name == 'password2' %}
+                                                    <i class="fas fa-check-circle me-2"></i>Password confirmation
+                                                {% elif field.name == 'first_name' %}
+                                                    <i class="fas fa-user me-2"></i>姓名
+                                                {% elif field.name == 'student_id' %}
+                                                    <i class="fas fa-id-card me-2"></i>学号
+                                                {% elif field.name == 'department' %}
+                                                    <i class="fas fa-building me-2"></i>学院
+                                                {% elif field.name == 'contact_method' %}
+                                                    <i class="fas fa-phone me-2"></i>联系方式
+                                                {% else %}
+                                                    <i class="fas fa-info-circle me-2"></i>{{ field.label }}
+                                                {% endif %}
+                                            </label>
+                                            <input type="{{ field.field.widget.input_type }}"
+                                                   name="{{ field.name }}"
+                                                   id="{{ field.id_for_label }}"
+                                                   class="form-control form-control-lg"
+                                                   placeholder="{% if field.name == 'username' %}请输入用户名{% elif field.name == 'email' %}请输入邮箱地址{% elif field.name == 'password1' %}请输入密码{% elif field.name == 'password2' %}请再次输入密码{% elif field.name == 'first_name' %}请输入姓名{% elif field.name == 'student_id' %}请输入学号{% elif field.name == 'department' %}请输入学院{% elif field.name == 'contact_method' %}请输入联系方式{% else %}请输入{{ field.label }}{% endif %}"
+                                                   {% if field.field.required %}required{% endif %}
+                                                   style="border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 1rem 1.25rem; font-size: 1rem;">
+                                        </div>
+                                    {% endfor %}
+
+                                    <div class="d-grid gap-2 mb-4">
+                                        <button type="submit" class="btn-custom btn-primary-custom btn-lg py-3">
+                                            <i class="fas fa-user-plus me-2"></i>
+                                            创建账户
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- 登录链接 -->
+                                <div class="text-center mt-4">
+                                    <p class="text-muted mb-3">已有账号？</p>
+                                    <a href="{% url 'login' %}" class="btn-custom btn-outline-secondary">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        立即登录
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- 底部信息 -->
+                            <div class="text-center mt-4">
+                                <p class="text-muted small">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    注册即表示您同意我们的服务条款和隐私政策
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <style>
-html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #e6f2ff 0%, #f0f6ff 100%);
-}
-</style>
+    /* 注册页面整体布局 */
+    .register-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-<div class="footer">
-    © 2024 选课系统. All rights reserved.
-</div>
+    /* 左侧装饰面板 */
+    .register-left-panel {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .register-left-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="20" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="80" cy="30" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        pointer-events: none;
+    }
+
+    .feature-item {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* 表单区域 */
+    .register-form-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+    }
+
+    /* 表单包装器 */
+    .form-wrapper {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* 表单卡片 */
+    .card-custom {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        border: none;
+        animation: slideInRight 0.8s ease-out;
+        width: 100%;
+    }
+
+    /* 表单组样式 */
+    .form-group {
+        position: relative;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text-secondary) !important;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    /* 表单控件增强 */
+    .form-control {
+        transition: all 0.3s ease;
+        border: 2px solid var(--border-color);
+        background: rgba(248, 250, 252, 0.8);
+    }
+
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15);
+        background: white;
+        transform: translateY(-1px);
+    }
+
+    .form-control:hover {
+        border-color: rgba(16, 185, 129, 0.5);
+    }
+
+    /* 按钮样式 */
+    .btn-custom {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-outline-secondary {
+        border: 2px solid var(--border-color);
+        color: var(--text-secondary);
+        background: transparent;
+        padding: 0.75rem 2rem;
+        border-radius: var(--radius-md);
+    }
+
+    .btn-outline-secondary:hover {
+        background: var(--secondary-color);
+        border-color: var(--secondary-color);
+        color: white;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 1199.98px) {
+        .register-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .register-form-container {
+            background: rgba(255, 255, 255, 0.98);
+            min-height: 100vh;
+            padding: 3rem 2rem;
+        }
+
+        .form-wrapper {
+            max-width: 600px;
+        }
+
+        .card-custom {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .register-form-container {
+            padding: 2rem 1.5rem;
+        }
+
+        .form-wrapper {
+            max-width: 100%;
+        }
+
+        .card-custom {
+            padding: 2rem 1.5rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .register-form-container {
+            padding: 1.5rem 1rem;
+        }
+
+        .card-custom {
+            padding: 1.5rem 1rem !important;
+        }
+
+        .form-control {
+            padding: 0.875rem 1rem;
+            font-size: 16px; /* 防止iOS缩放 */
+        }
+
+        .btn-lg {
+            padding: 1rem 1.5rem;
+        }
+    }
+
+    /* 动画效果 */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* 加载动画 */
+    .register-left-panel .feature-item {
+        animation: fadeInLeft 0.8s ease-out forwards;
+        opacity: 0;
+    }
+
+    .register-left-panel .feature-item:nth-child(1) {
+        animation-delay: 0.2s;
+    }
+
+    .register-left-panel .feature-item:nth-child(2) {
+        animation-delay: 0.4s;
+    }
+
+    .register-left-panel .feature-item:nth-child(3) {
+        animation-delay: 0.6s;
+    }
+
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+</style>
 {% endblock %}

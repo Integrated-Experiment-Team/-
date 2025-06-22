@@ -1,0 +1,875 @@
+{% extends 'base.html' %}
+
+{% block title %}考试中心 - 智学平台{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="page-header mb-5">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="display-6 fw-bold mb-2" style="color: var(--text-primary);">
+                <i class="fas fa-clipboard-list me-3" style="color: var(--primary-color);"></i>
+                考试中心
+            </h1>
+            <p class="lead text-muted">管理您的考试和查看成绩</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'student:student_home' %}" class="btn-custom btn-secondary-custom">
+                <i class="fas fa-home me-2"></i>
+                返回主页
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 已完成的考试成绩 -->
+{% if completed_results %}
+<div class="results-section mb-5">
+    <div class="section-header mb-4">
+        <h3 class="fw-bold d-flex align-items-center">
+            <i class="fas fa-trophy me-3" style="color: var(--accent-color);"></i>
+            考试成绩
+        </h3>
+        <p class="text-muted">您的考试成果展示</p>
+    </div>
+
+    <div class="row">
+        {% for result in completed_results %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="result-card">
+                <div class="card-custom h-100">
+                    <!-- 成绩状态头部 -->
+                    <div class="card-header-custom {% if result.score >= 60 %}success{% else %}danger{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-semibold text-white">{{ result.exam.name }}</h6>
+                            <div class="score-badge">
+                                {% if result.score >= 60 %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成绩详情 -->
+                    <div class="card-body p-4">
+                        <div class="score-display mb-3">
+                            <div class="score-main">
+                                <span class="score-number">{{ result.score }}</span>
+                                <span class="score-total">/ {{ result.exam.total_score }}</span>
+                            </div>
+                            <div class="score-percentage">
+                                {% widthratio result.score result.exam.total_score 100 %}%
+                            </div>
+                        </div>
+
+                        <div class="progress-modern mb-3">
+                            <div class="progress-bar-modern {% if result.score >= 60 %}success{% else %}danger{% endif %}"
+                                 style="width: {% widthratio result.score result.exam.total_score 100 %}%">
+                            </div>
+                        </div>
+
+                        <div class="exam-info">
+                            <div class="info-item mb-2">
+                                <i class="fas fa-book me-2" style="color: var(--text-muted);"></i>
+                                <span class="text-muted">课程：</span>
+                                <span class="fw-medium">{{ result.exam.course.name }}</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-clock me-2" style="color: var(--text-muted);"></i>
+                                <span class="text-muted">提交：</span>
+                                <span class="fw-medium">{{ result.submitted_at|date:"m月d日 H:i" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 可参加的考试 -->
+<div class="available-exams-section">
+    <div class="section-header mb-4">
+        <h3 class="fw-bold d-flex align-items-center">
+            <i class="fas fa-play-circle me-3" style="color: var(--primary-color);"></i>
+            可参加的考试
+        </h3>
+        <p class="text-muted">把握机会，展示您的学习成果</p>
+    </div>
+
+    {% if exams %}
+        <div class="exams-grid">
+            {% for exam in exams %}
+            <div class="exam-card-modern">
+                <div class="exam-card-header">
+                    <div class="exam-status-badge">
+                        <i class="fas fa-clock"></i>
+                        <span>进行中</span>
+                    </div>
+                    <div class="exam-actions">
+                        <button class="action-btn favorite-btn" title="收藏">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        <button class="action-btn share-btn" title="分享">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="exam-card-body">
+                    <div class="exam-title-section">
+                        <h3 class="exam-title">{{ exam.name }}</h3>
+                        <p class="exam-course">{{ exam.course.name }}</p>
+                    </div>
+
+                    <div class="exam-info-grid">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">出题老师</span>
+                                <span class="info-value">{{ exam.teacher.name }}</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">总分</span>
+                                <span class="info-value">{{ exam.total_score }}分</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">发布时间</span>
+                                <span class="info-value">{{ exam.release_time|date:"m月d日 H:i" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon deadline-icon">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <div class="info-content">
+                                <span class="info-label">截止时间</span>
+                                <span class="info-value deadline-value">{{ exam.deadline|date:"m月d日 H:i" }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="exam-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-question-circle"></i>
+                            <span>{{ exam.questions.count }}题</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>预计60分钟</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-users"></i>
+                            <span>{{ exam.course.students.count }}人参与</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exam-card-footer">
+                    <a href="{% url 'student:student_exam_detail' exam.id %}" class="start-exam-btn">
+                        <i class="fas fa-play"></i>
+                        <span>开始考试</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-large">
+            <div class="card-custom p-5 text-center">
+                <div class="empty-icon mb-4">
+                    <i class="fas fa-clipboard-list" style="font-size: 4rem; color: var(--text-muted); opacity: 0.5;"></i>
+                </div>
+                <h4 class="fw-bold mb-3" style="color: var(--text-secondary);">暂无可参加的考试</h4>
+                <p class="text-muted mb-4">目前没有进行中的考试，请关注课程通知或联系老师了解更多信息。</p>
+                <div class="empty-actions">
+                    <a href="{% url 'student:student_home' %}" class="btn-custom btn-primary-custom me-3">
+                        <i class="fas fa-home me-2"></i>
+                        返回主页
+                    </a>
+                    <button onclick="location.reload()" class="btn-custom btn-secondary-custom">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        刷新页面
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    /* 页面头部样式 */
+    .page-header {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* 成绩卡片样式 */
+    .result-card .card-custom {
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .result-card .card-custom:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .card-header-custom.success {
+        background: linear-gradient(135deg, var(--secondary-color), #059669);
+    }
+
+    .card-header-custom.danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .score-display {
+        text-align: center;
+    }
+
+    .score-main {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .score-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .score-total {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+    }
+
+    .score-percentage {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .progress-modern {
+        height: 8px;
+        background-color: var(--bg-secondary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar-modern {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+
+    .progress-bar-modern.success {
+        background: linear-gradient(90deg, var(--secondary-color), #059669);
+    }
+
+    .progress-bar-modern.danger {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    /* 现代化考试卡片网格 */
+    .exams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    /* 现代化考试卡片 */
+    .exam-card-modern {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: all 0.4s ease;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        position: relative;
+    }
+
+    .exam-card-modern:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+        border-color: var(--primary-color);
+    }
+
+    /* 卡片头部 */
+    .exam-card-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .exam-card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        transform: rotate(45deg);
+    }
+
+    .exam-status-badge {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .exam-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .action-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    /* 卡片主体 */
+    .exam-card-body {
+        padding: 2rem;
+    }
+
+    .exam-title-section {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .exam-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .exam-course {
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* 信息网格 */
+    .exam-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .info-item:hover {
+        background: rgba(102, 126, 234, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .deadline-icon {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .info-content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .deadline-value {
+        color: #ef4444;
+    }
+
+    /* 统计信息 */
+    .exam-stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .stat-item i {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+
+    /* 卡片底部 */
+    .exam-card-footer {
+        padding: 0 2rem 2rem;
+    }
+
+    .start-exam-btn {
+        width: 100%;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .start-exam-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .start-exam-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+
+    .start-exam-btn:hover::before {
+        left: 100%;
+    }
+
+    /* 空状态样式 */
+    .empty-state-large {
+        margin: 3rem 0;
+    }
+
+    .empty-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 0.8; }
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 1200px) {
+        .exams-grid {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-actions {
+            margin-top: 1rem;
+        }
+
+        .score-number {
+            font-size: 1.5rem;
+        }
+
+        .empty-actions .btn-custom {
+            display: block;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-actions .btn-custom:last-child {
+            margin-bottom: 0;
+        }
+
+        .exams-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .exam-card-body {
+            padding: 1.5rem;
+        }
+
+        .exam-info-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .exam-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .exam-title {
+            font-size: 1.3rem;
+        }
+
+        .exam-actions {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .exam-card-header {
+            padding: 1rem;
+        }
+
+        .exam-card-body {
+            padding: 1rem;
+        }
+
+        .exam-card-footer {
+            padding: 0 1rem 1rem;
+        }
+
+        .info-item {
+            padding: 0.75rem;
+        }
+
+        .info-icon {
+            width: 35px;
+            height: 35px;
+        }
+    }
+
+    /* 页面加载动画 */
+    .result-card, .exam-card-modern {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .result-card:nth-child(1), .exam-card-modern:nth-child(1) { animation-delay: 0.1s; }
+    .result-card:nth-child(2), .exam-card-modern:nth-child(2) { animation-delay: 0.2s; }
+    .result-card:nth-child(3), .exam-card-modern:nth-child(3) { animation-delay: 0.3s; }
+    .result-card:nth-child(4), .exam-card-modern:nth-child(4) { animation-delay: 0.4s; }
+    .result-card:nth-child(5), .exam-card-modern:nth-child(5) { animation-delay: 0.5s; }
+    .result-card:nth-child(6), .exam-card-modern:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* 交互效果 */
+    .favorite-btn.active {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .favorite-btn.active i {
+        color: #ff6b6b;
+    }
+
+    /* 加载状态 */
+    .exam-card-modern.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .exam-card-modern.loading .start-exam-btn {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    /* 悬浮提示 */
+    .action-btn[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 1000;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 收藏功能
+    const favoriteButtons = document.querySelectorAll('.favorite-btn');
+    favoriteButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.classList.toggle('active');
+            const icon = this.querySelector('i');
+            if (this.classList.contains('active')) {
+                icon.className = 'fas fa-heart';
+                showNotification('已添加到收藏', 'success');
+            } else {
+                icon.className = 'far fa-heart';
+                showNotification('已取消收藏', 'info');
+            }
+        });
+    });
+
+    // 分享功能
+    const shareButtons = document.querySelectorAll('.share-btn');
+    shareButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const examCard = this.closest('.exam-card-modern');
+            const examTitle = examCard.querySelector('.exam-title').textContent;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: examTitle,
+                    text: `来参加考试：${examTitle}`,
+                    url: window.location.href
+                });
+            } else {
+                // 复制到剪贴板
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showNotification('链接已复制到剪贴板', 'success');
+                });
+            }
+        });
+    });
+
+    // 考试卡片点击效果
+    const examCards = document.querySelectorAll('.exam-card-modern');
+    examCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // 如果点击的是按钮，不触发卡片点击
+            if (e.target.closest('.action-btn') || e.target.closest('.start-exam-btn')) {
+                return;
+            }
+
+            // 添加点击效果
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+
+    // 开始考试按钮加载状态
+    const startExamButtons = document.querySelectorAll('.start-exam-btn');
+    startExamButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const card = this.closest('.exam-card-modern');
+            card.classList.add('loading');
+
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>正在进入...</span>';
+
+            // 如果页面没有跳转，恢复按钮状态
+            setTimeout(() => {
+                if (card.classList.contains('loading')) {
+                    card.classList.remove('loading');
+                    this.innerHTML = originalText;
+                }
+            }, 5000);
+        });
+    });
+
+    // 实时更新截止时间倒计时
+    function updateCountdowns() {
+        const deadlineElements = document.querySelectorAll('.deadline-value');
+        deadlineElements.forEach(element => {
+            const deadlineText = element.textContent;
+            // 这里可以添加倒计时逻辑
+            // 由于时间格式是 "06月28日 06:32"，需要解析并计算剩余时间
+        });
+    }
+
+    // 每分钟更新一次倒计时
+    setInterval(updateCountdowns, 60000);
+
+    // 页面可见性变化时刷新数据
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            updateCountdowns();
+        }
+    });
+
+    // 通知函数
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation' : 'info'}-circle"></i>
+            ${message}
+        `;
+
+        // 添加通知样式
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+            border-left: 4px solid ${type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#17a2b8'};
+            color: ${type === 'success' ? '#155724' : type === 'warning' ? '#856404' : '#0c5460'};
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(400px)';
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // 键盘快捷键
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + R 刷新页面
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            location.reload();
+        }
+
+        // ESC 键取消所有活动状态
+        if (e.key === 'Escape') {
+            favoriteButtons.forEach(btn => btn.classList.remove('active'));
+        }
+    });
+
+    // 滚动时的视差效果
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const parallax = document.querySelector('.page-header');
+        if (parallax) {
+            const speed = scrolled * 0.5;
+            parallax.style.transform = `translateY(${speed}px)`;
+        }
+    });
+});
+</script>
+{% endblock %}

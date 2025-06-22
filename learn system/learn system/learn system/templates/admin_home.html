@@ -1,44 +1,215 @@
 {% extends 'base.html' %}
 {% load bootstrap3 %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_home.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
 
 {% block content %}
-<h1>管理员页面</h1>
-<form method="post" action="">
-    {% csrf_token %}
-    {% bootstrap_form form layout='inline' %}
-    <input type="submit" value="修改老师信息" class="btn btn-primary">
-</form>
-{% if message %}
-    <div class="alert alert-success">{{ message }}</div>
-{% endif %}
-<h2>老师信息列表</h2>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>姓名</th>
-            <th>工号</th>
-            <th>学院</th>
-            <th>联系方式</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for teacher in teachers %}
-            <tr>
-                <td>{{ teacher.name }}</td>
-                <td>{{ teacher.teacher_id }}</td>
-                <td>{{ teacher.college }}</td>
-                <td>{{ teacher.contact }}</td>
-                <td><a href="#" onclick="selectTeacher({{ teacher.id }})">选择</a></td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="admin-dashboard">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-user-shield"></i> 管理员控制台</h1>
+            <p>管理教师信息和系统设置</p>
+        </div>
+    </div>
+
+    <!-- 成功消息 -->
+    {% if message %}
+    <div class="alert-container">
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ message }}
+            <button type="button" class="close-btn" onclick="this.parentElement.style.display='none'">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-content">
+        <!-- 教师信息编辑卡片 -->
+        <div class="edit-card">
+            <div class="card-header">
+                <h2><i class="fas fa-edit"></i> 编辑教师信息</h2>
+                <p>选择教师并修改其信息</p>
+            </div>
+            <div class="card-body">
+                <form method="post" action="" class="edit-form">
+                    {% csrf_token %}
+                    <div class="form-grid">
+                        {% for field in form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="field-error">
+                                    {% for error in field.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存修改
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                            <i class="fas fa-undo"></i> 重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 教师列表卡片 -->
+        <div class="teachers-card">
+            <div class="card-header">
+                <h2><i class="fas fa-users"></i> 教师信息列表</h2>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索教师..." onkeyup="filterTeachers()">
+                    </div>
+                    <span class="teacher-count">共 {{ teachers.count }} 位教师</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="teachers-grid" id="teachersGrid">
+                    {% for teacher in teachers %}
+                    <div class="teacher-item" data-name="{{ teacher.name|lower }}" data-id="{{ teacher.teacher_id }}" data-college="{{ teacher.college|lower }}">
+                        <div class="teacher-avatar">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="teacher-info">
+                            <h3>{{ teacher.name }}</h3>
+                            <div class="teacher-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-id-badge"></i>
+                                    <span>工号: {{ teacher.teacher_id }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-university"></i>
+                                    <span>{{ teacher.college }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span>{{ teacher.contact }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="teacher-actions">
+                            <button class="btn btn-select" onclick="selectTeacher({{ teacher.id }}, '{{ teacher.name|escapejs }}')">
+                                <i class="fas fa-check"></i> 选择编辑
+                            </button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-plus"></i>
+                        <h3>暂无教师信息</h3>
+                        <p>系统中还没有注册的教师</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    function selectTeacher(teacher_id) {
+    // 选择教师函数
+    function selectTeacher(teacher_id, teacher_name) {
         document.getElementById('id_teacher_id').value = teacher_id;
+
+        // 高亮选中的教师卡片
+        document.querySelectorAll('.teacher-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        event.target.closest('.teacher-item').classList.add('selected');
+
+        // 显示选择提示
+        showNotification(`已选择教师: ${teacher_name}`, 'info');
+
+        // 滚动到编辑表单
+        document.querySelector('.edit-card').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
     }
+
+    // 清空表单
+    function clearForm() {
+        document.querySelector('.edit-form').reset();
+        document.querySelectorAll('.teacher-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        showNotification('表单已重置', 'info');
+    }
+
+    // 搜索教师
+    function filterTeachers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const teacherItems = document.querySelectorAll('.teacher-item');
+        let visibleCount = 0;
+
+        teacherItems.forEach(item => {
+            const name = item.dataset.name;
+            const id = item.dataset.id;
+            const college = item.dataset.college;
+
+            if (name.includes(searchTerm) || id.includes(searchTerm) || college.includes(searchTerm)) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // 更新计数
+        const countElement = document.querySelector('.teacher-count');
+        if (searchTerm) {
+            countElement.textContent = `找到 ${visibleCount} 位教师`;
+        } else {
+            countElement.textContent = `共 {{ teachers.count }} 位教师`;
+        }
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle"></i>
+            ${message}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // 页面加载完成后的初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 为表单字段添加样式类
+        document.querySelectorAll('.edit-form input, .edit-form select, .edit-form textarea').forEach(field => {
+            field.classList.add('form-control');
+        });
+    });
 </script>
 
 {% endblock %}

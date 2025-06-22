@@ -25,7 +25,18 @@ SECRET_KEY = 'django-insecure-hyav@_%l=7%psjut4a-r0zqt67w**+^hi_my0ai)(uno2x#!th
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '*']
+
+# 开发环境性能优化
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
+# 禁用一些开发环境下不必要的中间件
+if DEBUG:
+    # 减少文件监控的开销
+    import os
+    os.environ.setdefault('DJANGO_AUTORELOAD_EXTRA_FILES', '')
 
 # 引入在线的bootstrap3框架
 BOOTSTRAP3 = {
@@ -87,14 +98,24 @@ WSGI_APPLICATION = 'course_selection.wsgi.application'
 
 DATABASES = {
     'default': {
-    'ENGINE': 'django.db.backends.mysql',	# Django的引擎，还可以用Oracle等
-    'NAME': 'learn_system',	# 数据库名
-    'USER': 'root',		# 用户名
-    'PASSWORD': 'root',	# 密码
-    'HOST': 'localhost',			# 数据库服务器地址
-    'PORT': 3306,		# 端口号（MySQL默认3306）
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+        }
     }
+}
 
+# 缓存配置 - 开发环境使用本地内存缓存
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
 }
 
 
@@ -157,8 +178,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # 配置登录和注销跳转页面
-LOGIN_URL = '/login/'
+LOGIN_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
-
-# LOGIN_REDIRECT_URL = '/teacher/teacher_home/'
-LOGOUT_REDIRECT_URL = '../'
+# 媒体文件配置
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

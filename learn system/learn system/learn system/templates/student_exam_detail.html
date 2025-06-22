@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load exam_extras %}
+
+{% block title %}{{ exam.name }} - 智学平台{% endblock %}
+
+{% block content %}
+<!-- 考试头部信息 -->
+<div class="exam-header mb-4">
+    <div class="card-custom p-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="exam-title-section">
+                    <h1 class="exam-title fw-bold mb-2">{{ exam.name }}</h1>
+                    <div class="exam-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-book me-2" style="color: var(--primary-color);"></i>
+                            {{ exam.course.name }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-user-tie me-2" style="color: var(--secondary-color);"></i>
+                            {{ exam.teacher.name }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-star me-2" style="color: var(--accent-color);"></i>
+                            总分 {{ exam.total_score }} 分
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="exam-timer-section text-center">
+                    <div class="timer-display">
+                        <i class="fas fa-clock mb-2" style="font-size: 2rem; color: var(--accent-color);"></i>
+                        <div class="deadline-info">
+                            <p class="mb-1 text-muted">截止时间</p>
+                            <p class="deadline-time fw-bold" style="color: var(--text-primary);">
+                                {{ exam.deadline|date:"m月d日 H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 考试进度指示器 -->
+<div class="exam-progress mb-4">
+    <div class="card-custom p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="progress-info">
+                <span class="text-muted">答题进度</span>
+                <span id="progress-text" class="fw-semibold ms-2">0 / {{ questions|length }}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress" style="width: 200px; height: 8px;">
+                    <div id="progress-bar" class="progress-bar"
+                         style="background-color: var(--primary-color); width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 考试题目 -->
+<div class="exam-questions">
+    <form method="post" id="exam-form">
+        {% csrf_token %}
+        {% for question in questions %}
+        <div class="question-card mb-4" data-question-id="{{ question.id }}">
+            <div class="card-custom">
+                <div class="card-body p-4">
+                    <!-- 题目标题 -->
+                    <div class="question-header mb-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h4 class="question-title fw-semibold mb-2">
+                                <span class="question-number">{{ forloop.counter }}</span>
+                                {{ question.text }}
+                            </h4>
+                            <div class="question-points">
+                                <span class="badge" style="background-color: var(--accent-color);">
+                                    {{ question.points }} 分
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 选项列表 -->
+                    <div class="question-options">
+                        {% for option in question.options %}
+                        <div class="option-item mb-3">
+                            <div class="form-check custom-radio">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="question_{{ question.id }}"
+                                       id="question_{{ question.id }}_{{ forloop.counter0 }}"
+                                       value="{{ option }}"
+                                       onchange="updateProgress()">
+                                <label class="form-check-label"
+                                       for="question_{{ question.id }}_{{ forloop.counter0 }}">
+                                    <span class="option-letter">{{ forloop.counter0|add:65|chr }}</span>
+                                    <span class="option-text">{{ option }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- 提交按钮 -->
+        <div class="exam-submit-section">
+            <div class="card-custom p-4 text-center">
+                <div class="submit-info mb-4">
+                    <h5 class="fw-semibold mb-2">准备提交试卷？</h5>
+                    <p class="text-muted">请确认所有题目都已作答，提交后将无法修改</p>
+                </div>
+
+                <div class="submit-actions">
+                    <button type="button"
+                            class="btn-custom btn-secondary-custom me-3"
+                            onclick="checkAnswers()">
+                        <i class="fas fa-search me-2"></i>
+                        检查答题
+                    </button>
+                    <button type="submit"
+                            class="btn-custom btn-primary-custom"
+                            onclick="return confirmSubmit()">
+                        <i class="fas fa-paper-plane me-2"></i>
+                        提交试卷
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    /* 考试头部样式 */
+    .exam-header .card-custom {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(16, 185, 129, 0.05));
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .exam-title {
+        color: var(--text-primary);
+        font-size: 1.75rem;
+    }
+
+    .exam-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .timer-display {
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        background: rgba(245, 158, 11, 0.1);
+    }
+
+    .deadline-time {
+        font-size: 1.1rem;
+    }
+
+    /* 题目卡片样式 */
+    .question-card {
+        transition: all 0.3s ease;
+    }
+
+    .question-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .question-number {
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 2rem;
+        font-size: 0.9rem;
+        margin-right: 1rem;
+    }
+
+    .question-title {
+        color: var(--text-primary);
+    }
+
+    /* 自定义单选按钮样式 */
+    .custom-radio {
+        position: relative;
+    }
+
+    .custom-radio .form-check-input {
+        display: none;
+    }
+
+    .custom-radio .form-check-label {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: var(--bg-card);
+    }
+
+    .custom-radio .form-check-label:hover {
+        border-color: var(--primary-light);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .custom-radio .form-check-input:checked + .form-check-label {
+        border-color: var(--primary-color);
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .option-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        background: var(--bg-secondary);
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 1rem;
+        color: var(--text-secondary);
+    }
+
+    .custom-radio .form-check-input:checked + .form-check-label .option-letter {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .option-text {
+        flex: 1;
+        color: var(--text-primary);
+    }
+
+    /* 提交区域样式 */
+    .exam-submit-section {
+        margin-top: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .submit-info h5 {
+        color: var(--text-primary);
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .exam-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .timer-display {
+            margin-top: 1rem;
+        }
+
+        .submit-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .submit-actions .btn-custom {
+            width: 100%;
+        }
+    }
+
+    /* 动画效果 */
+    .question-card {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .question-card:nth-child(1) { animation-delay: 0.1s; }
+    .question-card:nth-child(2) { animation-delay: 0.2s; }
+    .question-card:nth-child(3) { animation-delay: 0.3s; }
+    .question-card:nth-child(4) { animation-delay: 0.4s; }
+    .question-card:nth-child(5) { animation-delay: 0.5s; }
+</style>
+
+<script>
+    // 更新答题进度
+    function updateProgress() {
+        const totalQuestions = {{ questions|length }};
+        const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+        const progressPercentage = (answeredQuestions / totalQuestions) * 100;
+
+        document.getElementById('progress-text').textContent = `${answeredQuestions} / ${totalQuestions}`;
+        document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+    }
+
+    // 检查答题情况
+    function checkAnswers() {
+        const totalQuestions = {{ questions|length }};
+        const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+        const unansweredCount = totalQuestions - answeredQuestions;
+
+        if (unansweredCount > 0) {
+            alert(`还有 ${unansweredCount} 道题目未作答，请检查后再提交。`);
+
+            // 高亮未答题目
+            document.querySelectorAll('.question-card').forEach(card => {
+                const questionId = card.dataset.questionId;
+                const hasAnswer = card.querySelector('input[type="radio"]:checked');
+
+                if (!hasAnswer) {
+                    card.style.border = '2px solid #ef4444';
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+            });
+        } else {
+            alert('所有题目都已作答，可以提交试卷了！');
+        }
+    }
+
+    // 确认提交
+    function confirmSubmit() {
+        const totalQuestions = {{ questions|length }};
+        const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+
+        if (answeredQuestions < totalQuestions) {
+            const unansweredCount = totalQuestions - answeredQuestions;
+            return confirm(`还有 ${unansweredCount} 道题目未作答，确定要提交吗？`);
+        }
+
+        return confirm('确定要提交试卷吗？提交后将无法修改答案。');
+    }
+
+    // 页面加载时初始化进度
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProgress();
+
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                if (confirm('使用快捷键提交试卷，确定吗？')) {
+                    document.getElementById('exam-form').submit();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

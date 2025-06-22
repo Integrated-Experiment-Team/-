@@ -1,0 +1,463 @@
+{% extends 'base.html' %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/exam_create.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="exam-create-dashboard">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-clipboard-list"></i> 创建考试</h1>
+            <p>为课程 <span class="course-name">{{ course.name }}</span> 创建新的考试</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'teacher:teacher_course_detail' course.id %}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> 返回课程
+            </a>
+        </div>
+    </div>
+
+    <div class="exam-create-container">
+        <form method="post" id="exam-create-form" class="exam-form">
+            {% csrf_token %}
+
+            <!-- 考试基本信息卡片 -->
+            <div class="info-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-info-circle"></i> 考试基本信息</h2>
+                    <p>设置考试的基本信息和时间安排</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        {% for field in exam_form %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}" class="form-label">
+                                {% if field.name == 'name' %}
+                                    <i class="fas fa-tag"></i>
+                                {% elif field.name == 'deadline' %}
+                                    <i class="fas fa-clock"></i>
+                                {% elif field.name == 'total_score' %}
+                                    <i class="fas fa-star"></i>
+                                {% endif %}
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="field-error">
+                                    {% for error in field.errors %}
+                                        <span><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="field-help">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 考试题目卡片 -->
+            <div class="questions-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <h2><i class="fas fa-question-circle"></i> 考试题目</h2>
+                        <p>添加和编辑考试题目</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="question-stats">
+                            <span class="stat-item">
+                                <i class="fas fa-list-ol"></i>
+                                题目数量: <span id="question-count">{{ question_formset.forms|length }}</span>
+                            </span>
+                            <span class="stat-item">
+                                <i class="fas fa-calculator"></i>
+                                总分值: <span id="total-points">0</span>
+                            </span>
+                        </div>
+                        <button type="button" id="add-question-btn" class="btn btn-success">
+                            <i class="fas fa-plus"></i> 添加题目
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="questions-container" class="questions-container">
+                        {{ question_formset.management_form }}
+                        {% for form in question_formset %}
+                        <div class="question-form" data-question-index="{{ forloop.counter0 }}">
+                            <div class="question-header">
+                                <h3><i class="fas fa-edit"></i> 题目 {{ forloop.counter }}</h3>
+                                <div class="question-actions">
+                                    <button type="button" class="btn btn-icon btn-danger remove-question-btn" title="删除题目">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="question-body">
+                                {% for field in form %}
+                                <div class="form-group">
+                                    <label for="{{ field.id_for_label }}" class="form-label">
+                                        {% if field.name == 'text' %}
+                                            <i class="fas fa-question"></i>
+                                        {% elif field.name == 'question_type' %}
+                                            <i class="fas fa-list"></i>
+                                        {% elif field.name == 'options' %}
+                                            <i class="fas fa-check-square"></i>
+                                        {% elif field.name == 'correct_options' %}
+                                            <i class="fas fa-check-circle"></i>
+                                        {% elif field.name == 'points' %}
+                                            <i class="fas fa-star"></i>
+                                        {% endif %}
+                                        {{ field.label }}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="field-error">
+                                            {% for error in field.errors %}
+                                                <span><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <div class="field-help">{{ field.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-questions">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3>还没有添加题目</h3>
+                            <p>点击"添加题目"按钮开始创建考试题目</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">
+                    <i class="fas fa-save"></i> 创建考试
+                </button>
+                <a href="{% url 'teacher:teacher_course_detail' course.id %}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-times"></i> 取消
+                </a>
+                <button type="button" class="btn btn-outline btn-large" onclick="previewExam()">
+                    <i class="fas fa-eye"></i> 预览考试
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionsContainer = document.getElementById('questions-container');
+    const addQuestionBtn = document.getElementById('add-question-btn');
+    const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+    const questionCountSpan = document.getElementById('question-count');
+    const totalPointsSpan = document.getElementById('total-points');
+
+    // 初始化
+    initializeForm();
+    updateStats();
+
+    function initializeForm() {
+        // 为所有表单字段添加样式类
+        document.querySelectorAll('.exam-form input, .exam-form select, .exam-form textarea').forEach(field => {
+            field.classList.add('form-control');
+        });
+
+        // 为现有的删除按钮添加事件
+        document.querySelectorAll('.remove-question-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                removeQuestion(this);
+            });
+        });
+
+        // 为分值输入框添加变化监听
+        document.querySelectorAll('input[name*="points"]').forEach(input => {
+            input.addEventListener('input', updateStats);
+        });
+    }
+
+    // 动态添加题目
+    addQuestionBtn.addEventListener('click', function() {
+        const currentFormCount = parseInt(totalFormsInput.value);
+        const newFormIndex = currentFormCount;
+
+        // 隐藏空状态提示
+        const emptyState = questionsContainer.querySelector('.empty-questions');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+
+        // 创建新题目表单
+        const newQuestionHtml = createNewQuestionForm(newFormIndex);
+        questionsContainer.insertAdjacentHTML('beforeend', newQuestionHtml);
+
+        // 更新表单计数
+        totalFormsInput.value = currentFormCount + 1;
+
+        // 为新添加的表单元素添加事件监听
+        const newForm = questionsContainer.lastElementChild;
+        const removeBtn = newForm.querySelector('.remove-question-btn');
+        removeBtn.addEventListener('click', function() {
+            removeQuestion(this);
+        });
+
+        // 为新的分值输入框添加监听
+        const pointsInput = newForm.querySelector('input[name*="points"]');
+        if (pointsInput) {
+            pointsInput.addEventListener('input', updateStats);
+        }
+
+        // 更新统计信息
+        updateStats();
+        updateQuestionNumbers();
+
+        // 滚动到新添加的题目
+        newForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 显示成功提示
+        showNotification('题目已添加', 'success');
+    });
+
+    // 删除题目
+    function removeQuestion(btn) {
+        const questionForm = btn.closest('.question-form');
+        const forms = questionsContainer.querySelectorAll('.question-form');
+
+        if (forms.length > 1) {
+            questionForm.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                questionForm.remove();
+                updateFormCount();
+                updateStats();
+                updateQuestionNumbers();
+                showNotification('题目已删除', 'info');
+            }, 300);
+        } else {
+            showNotification('至少需要保留一个题目', 'warning');
+        }
+    }
+
+    // 创建新题目表单HTML
+    function createNewQuestionForm(index) {
+        return `
+            <div class="question-form" data-question-index="${index}">
+                <div class="question-header">
+                    <h3><i class="fas fa-edit"></i> 题目 ${index + 1}</h3>
+                    <div class="question-actions">
+                        <button type="button" class="btn btn-icon btn-danger remove-question-btn" title="删除题目">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="question-body">
+                    <div class="form-group">
+                        <label for="id_form-${index}-text" class="form-label">
+                            <i class="fas fa-question"></i> 题目内容
+                        </label>
+                        <input type="text" name="form-${index}-text" class="form-control" placeholder="请输入题目" id="id_form-${index}-text">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_form-${index}-question_type" class="form-label">
+                            <i class="fas fa-list"></i> 题目类型
+                        </label>
+                        <select name="form-${index}-question_type" class="form-control" id="id_form-${index}-question_type">
+                            <option value="single_choice">单选题</option>
+                            <option value="multiple_choice">多选题</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_form-${index}-options" class="form-label">
+                            <i class="fas fa-check-square"></i> 选项（每行一个）
+                        </label>
+                        <textarea name="form-${index}-options" rows="3" class="form-control" placeholder="每个选项占一行" id="id_form-${index}-options"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_form-${index}-correct_options" class="form-label">
+                            <i class="fas fa-check-circle"></i> 正确答案
+                        </label>
+                        <textarea name="form-${index}-correct_options" rows="2" class="form-control" placeholder="正确答案" id="id_form-${index}-correct_options"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_form-${index}-points" class="form-label">
+                            <i class="fas fa-star"></i> 分值
+                        </label>
+                        <input type="number" name="form-${index}-points" min="1" max="20" class="form-control" id="id_form-${index}-points" value="5">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 更新表单数量
+    function updateFormCount() {
+        const forms = questionsContainer.querySelectorAll('.question-form');
+        totalFormsInput.value = forms.length;
+
+        // 重新索引表单
+        forms.forEach((form, index) => {
+            form.dataset.questionIndex = index;
+            form.querySelectorAll('input, textarea, select').forEach(function(el) {
+                const oldName = el.name;
+                const newName = oldName.replace(/form-\d+/g, `form-${index}`);
+                const oldId = el.id;
+                const newId = oldId.replace(/form-\d+/g, `form-${index}`);
+
+                el.name = newName;
+                el.id = newId;
+
+                // 更新 label 的 for 属性
+                const label = form.querySelector(`label[for="${oldId}"]`);
+                if (label) {
+                    label.setAttribute('for', newId);
+                }
+            });
+        });
+
+        // 如果没有题目了，显示空状态
+        if (forms.length === 0) {
+            questionsContainer.innerHTML = `
+                <div class="empty-questions">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>还没有添加题目</h3>
+                    <p>点击"添加题目"按钮开始创建考试题目</p>
+                </div>
+            `;
+        }
+    }
+
+    // 更新题目编号
+    function updateQuestionNumbers() {
+        const forms = questionsContainer.querySelectorAll('.question-form');
+        forms.forEach((form, index) => {
+            const header = form.querySelector('.question-header h3');
+            if (header) {
+                header.innerHTML = `<i class="fas fa-edit"></i> 题目 ${index + 1}`;
+            }
+        });
+    }
+
+    // 更新统计信息
+    function updateStats() {
+        const forms = questionsContainer.querySelectorAll('.question-form');
+        const questionCount = forms.length;
+        let totalPoints = 0;
+
+        forms.forEach(form => {
+            const pointsInput = form.querySelector('input[name*="points"]');
+            if (pointsInput && pointsInput.value) {
+                totalPoints += parseInt(pointsInput.value) || 0;
+            }
+        });
+
+        if (questionCountSpan) questionCountSpan.textContent = questionCount;
+        if (totalPointsSpan) totalPointsSpan.textContent = totalPoints;
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation' : 'info'}-circle"></i>
+            ${message}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+});
+
+// 预览考试功能
+function previewExam() {
+    const form = document.getElementById('exam-create-form');
+    const formData = new FormData(form);
+
+    // 这里可以实现考试预览功能
+    showNotification('预览功能开发中...', 'info');
+}
+
+// 表单验证
+document.getElementById('exam-create-form').addEventListener('submit', function(e) {
+    const examName = document.querySelector('input[name="name"]').value;
+    const deadline = document.querySelector('input[name="deadline"]').value;
+    const questions = document.querySelectorAll('.question-form');
+
+    if (!examName.trim()) {
+        e.preventDefault();
+        showNotification('请输入考试名称', 'warning');
+        return;
+    }
+
+    if (!deadline) {
+        e.preventDefault();
+        showNotification('请设置考试截止时间', 'warning');
+        return;
+    }
+
+    if (questions.length === 0) {
+        e.preventDefault();
+        showNotification('请至少添加一个题目', 'warning');
+        return;
+    }
+
+    // 验证每个题目
+    let hasError = false;
+    questions.forEach((question, index) => {
+        const text = question.querySelector('input[name*="text"]').value;
+        const points = question.querySelector('input[name*="points"]').value;
+
+        if (!text.trim()) {
+            hasError = true;
+            showNotification(`题目 ${index + 1} 的内容不能为空`, 'warning');
+        }
+
+        if (!points || points < 1) {
+            hasError = true;
+            showNotification(`题目 ${index + 1} 的分值必须大于0`, 'warning');
+        }
+    });
+
+    if (hasError) {
+        e.preventDefault();
+        return;
+    }
+
+    // 显示提交中状态
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 创建中...';
+    submitBtn.disabled = true;
+
+    // 如果验证失败，恢复按钮状态
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 5000);
+});
+</script>
+{% endblock %} 

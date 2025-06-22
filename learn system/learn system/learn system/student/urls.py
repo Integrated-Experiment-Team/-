@@ -1,9 +1,17 @@
 from django.urls import path
-from .views import student_home, student_course_detail, student_info
+from . import views
+
+app_name = 'student'
 
 urlpatterns = [
-    path('student_home/', student_home, name='student_home'),
-    path('course/<int:course_id>/', student_course_detail, name='student_course_detail'),
-    path('student_info/', student_info, name='student_info'),
+    path('', views.index, name='index'),
+    path('register/student/', views.student_register, name='student_register'),
+    path('home/', views.student_home, name='student_home'),
+    path('course/<int:course_id>/', views.student_course_detail, name='student_course_detail'),
+    path('info/', views.student_info, name='student_info'),
+
+    # 新增的考试相关URL
+    path('exams/', views.exam_list, name='student_exam_list'),
+    path('exam/<int:exam_id>/', views.exam_detail, name='student_exam_detail'),
 ]
 

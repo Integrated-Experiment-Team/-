@@ -1,61 +1,1639 @@
 {% extends 'base.html' %}
 {% load bootstrap3 %}
+{% load static %}
+
+{% block title %}{{ course.name }} - 课程详情{% endblock %}
 
 {% block content %}
-<h1>课程详情</h1>
-<form method="post" action="" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="hidden" name="video">
-    {% bootstrap_form video_form layout='inline' %}
-    <input type="submit" value="上传视频" class="btn btn-primary">
-</form>
-<form method="post" action="" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="hidden" name="document">
-    {% bootstrap_form document_form layout='inline' %}
-    <input type="submit" value="上传文档" class="btn btn-primary">
-</form>
-{% if message %}
-    <div class="alert alert-success">{{ message }}</div>
-{% endif %}
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">{{ course.name }}</h3>
-    </div>
-    <div class="panel-body">
-        <p>{{ course.description }}</p>
-        <p>课程标识：{{ course.code }}</p>
-        <p>老师：{{ course.teacher.name }}</p>
-    </div>
-</div>
-<h2>视频资料</h2>
-<div class="row">
-    {% for video in course.videos.all %}
-        <div class="col-md-4">
-            <div class="thumbnail">
-                <!-- 使用HTML5视频播放器或集成第三方视频播放器 -->
-                <video src="{{ video.file.url }}" controls></video>
-                <div class="caption">
-                    <h4>{{ video.name }}</h4>
-                    <p>上传时间：{{ video.upload_time }}</p>
+<!-- 课程头部横幅 -->
+<div class="course-hero-section">
+    <div class="hero-background">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="container">
+                <!-- 课程信息居中显示 -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-10 col-xl-8">
+                        <div class="course-hero-info text-center">
+                            <div class="course-breadcrumb">
+                                <a href="{% url 'teacher:teacher_home' %}" class="breadcrumb-link">
+                                    <i class="fas fa-home"></i> 首页
+                                </a>
+                                <span class="breadcrumb-separator">/</span>
+                                <span class="breadcrumb-current">课程详情</span>
+                            </div>
+                            <h1 class="course-title">{{ course.name }}</h1>
+                            <p class="course-subtitle">{{ course.description }}</p>
+                            <div class="course-meta justify-content-center">
+                                <div class="meta-item">
+                                    <i class="fas fa-code"></i>
+                                    <span>{{ course.code }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>{{ course.teacher.name }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ course.students.count }} 名学生</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>创建于 {{ course.created_at|date:"Y年m月d日" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 课程统计卡片 - 独立行居中显示 -->
+                <div class="row justify-content-center mt-4">
+                    <div class="col-lg-8 col-xl-6">
+                        <div class="course-stats-card">
+                            <h3 class="stats-title">课程统计</h3>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-number">{{ course.students.count }}</div>
+                                    <div class="stat-label">学生人数</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">{{ course.videos.count }}</div>
+                                    <div class="stat-label">视频资源</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">{{ course.documents.count }}</div>
+                                    <div class="stat-label">文档资料</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">{{ course.exams.count }}</div>
+                                    <div class="stat-label">考试数量</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    {% endfor %}
+    </div>
 </div>
-<h2>文档资料</h2>
-<div class="row">
-    {% for document in course.documents.all %}
-        <div class="col-md-4">
-            <div class="thumbnail">
-                <!-- 使用iframe或其他方式来显示文档 -->
-                <iframe src="{{ document.file.url }}" width="100%" height="300px"></iframe>
-                <div class="caption">
-                    <h4>{{ document.name }}</h4>
-                    <p>上传时间：{{ document.upload_time }}</p>
+
+<!-- 主要内容区域 -->
+<div class="course-content-section">
+    <div class="container">
+        <!-- 快速操作栏 -->
+        <div class="quick-actions-bar">
+            <div class="actions-title">
+                <h3><i class="fas fa-bolt"></i> 快速操作</h3>
+                <p>管理您的课程内容和资源</p>
+            </div>
+            <div class="actions-buttons">
+                <button type="button" class="action-btn primary" data-bs-toggle="modal" data-bs-target="#uploadVideoModal">
+                    <i class="fas fa-video"></i>
+                    <span>上传视频</span>
+                </button>
+                <button type="button" class="action-btn secondary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                    <i class="fas fa-file-upload"></i>
+                    <span>上传文档</span>
+                </button>
+                <a href="{% url 'teacher:create_exam' course.id %}" class="action-btn success">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>创建考试</span>
+                </a>
+                <button type="button" class="action-btn info" onclick="showStudentList()">
+                    <i class="fas fa-users"></i>
+                    <span>学生管理</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 课程资源区域 -->
+        <div class="course-resources-section">
+            <div class="row">
+                <!-- 视频资源 -->
+                <div class="col-lg-6 mb-4">
+                    <div class="resource-card">
+                        <div class="resource-header">
+                            <div class="header-left">
+                                <i class="fas fa-video resource-icon"></i>
+                                <div>
+                                    <h4>视频资源</h4>
+                                    <p>{{ course.videos.count }} 个视频文件</p>
+                                </div>
+                            </div>
+                            <button class="add-resource-btn" data-bs-toggle="modal" data-bs-target="#uploadVideoModal">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="resource-content">
+                            {% if course.videos.all %}
+                                <div class="resource-list">
+                                    {% for video in course.videos.all %}
+                                    <div class="resource-item">
+                                        <div class="resource-item-icon">
+                                            <i class="fas fa-play-circle"></i>
+                                        </div>
+                                        <div class="resource-item-info">
+                                            <h5>{{ video.name }}</h5>
+                                            <div class="resource-meta">
+                                                <span><i class="fas fa-clock"></i> {{ video.upload_time|date:"m月d日 H:i" }}</span>
+                                                <span><i class="fas fa-file-video"></i> 视频文件</span>
+                                            </div>
+                                        </div>
+                                        <div class="resource-actions">
+                                            <button class="action-btn-small preview" title="预览">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="action-btn-small edit" title="编辑">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="action-btn-small delete" title="删除">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-resource-state">
+                                    <i class="fas fa-video"></i>
+                                    <h5>暂无视频资源</h5>
+                                    <p>点击上方按钮上传第一个视频</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文档资料 -->
+                <div class="col-lg-6 mb-4">
+                    <div class="resource-card">
+                        <div class="resource-header">
+                            <div class="header-left">
+                                <i class="fas fa-file-alt resource-icon"></i>
+                                <div>
+                                    <h4>文档资料</h4>
+                                    <p>{{ course.documents.count }} 个文档文件</p>
+                                </div>
+                            </div>
+                            <button class="add-resource-btn" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="resource-content">
+                            {% if course.documents.all %}
+                                <div class="resource-list">
+                                    {% for document in course.documents.all %}
+                                    <div class="resource-item">
+                                        <div class="resource-item-icon">
+                                            {% if document.file.name|slice:"-4:" == ".pdf" %}
+                                                <i class="fas fa-file-pdf"></i>
+                                            {% elif document.file.name|slice:"-4:" == ".doc" or document.file.name|slice:"-5:" == ".docx" %}
+                                                <i class="fas fa-file-word"></i>
+                                            {% elif document.file.name|slice:"-4:" == ".ppt" or document.file.name|slice:"-5:" == ".pptx" %}
+                                                <i class="fas fa-file-powerpoint"></i>
+                                            {% else %}
+                                                <i class="fas fa-file"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="resource-item-info">
+                                            <h5>{{ document.name }}</h5>
+                                            <div class="resource-meta">
+                                                <span><i class="fas fa-clock"></i> {{ document.upload_time|date:"m月d日 H:i" }}</span>
+                                                <span><i class="fas fa-file"></i> 文档文件</span>
+                                            </div>
+                                        </div>
+                                        <div class="resource-actions">
+                                            <a href="{{ document.file.url }}" target="_blank" class="action-btn-small preview" title="预览">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ document.file.url }}" download class="action-btn-small download" title="下载">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <form method="post" action="{% url 'teacher:delete_document' document.id %}" style="display: inline;" onsubmit="return confirm('确定要删除文档 {{ document.name }} 吗？')">
+                                                {% csrf_token %}
+                                                <button type="submit" class="action-btn-small delete" title="删除">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-resource-state">
+                                    <i class="fas fa-file-alt"></i>
+                                    <h5>暂无文档资料</h5>
+                                    <p>点击上方按钮上传第一个文档</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    {% endfor %}
+                </div>
+            </div>
+
+        <!-- 考试管理区域 -->
+        <div class="exams-management-section">
+            <div class="section-header">
+                <div class="header-left">
+                    <h3><i class="fas fa-clipboard-list"></i> 考试管理</h3>
+                    <p>管理课程相关的所有考试</p>
+                </div>
+                <a href="{% url 'teacher:create_exam' course.id %}" class="create-exam-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>创建新考试</span>
+                </a>
+            </div>
+
+            {% if course.exams.all %}
+                <div class="exams-grid">
+                    {% for exam in course.exams.all %}
+                    <div class="exam-card">
+                        <div class="exam-card-header">
+                            <div class="exam-status">
+                                {% if exam.deadline > now %}
+                                    <span class="status-badge active">进行中</span>
+                                {% else %}
+                                    <span class="status-badge ended">已结束</span>
+                                {% endif %}
+                            </div>
+                            <div class="exam-actions-dropdown">
+                                <button class="dropdown-btn">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="#" class="dropdown-item">
+                                        <i class="fas fa-edit"></i> 编辑考试
+                                    </a>
+                                    <a href="#" class="dropdown-item">
+                                        <i class="fas fa-chart-bar"></i> 查看统计
+                                    </a>
+                                    <a href="#" class="dropdown-item danger">
+                                        <i class="fas fa-trash"></i> 删除考试
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="exam-card-body">
+                            <h4 class="exam-title">{{ exam.name }}</h4>
+                            <div class="exam-info-grid">
+                                <div class="info-row">
+                                    <span class="info-label">发布时间</span>
+                                    <span class="info-value">{{ exam.release_time|date:"Y年m月d日 H:i" }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">截止时间</span>
+                                    <span class="info-value deadline">{{ exam.deadline|date:"Y年m月d日 H:i" }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">总分</span>
+                                    <span class="info-value score">{{ exam.total_score }} 分</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">题目数量</span>
+                                    <span class="info-value">{{ exam.questions.count }} 题</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="exam-card-footer">
+                            <div class="exam-stats">
+                                <div class="stat">
+                                    <span class="stat-number">{{ exam.results.count }}</span>
+                                    <span class="stat-label">参与人数</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-number">85%</span>
+                                    <span class="stat-label">平均分</span>
+                                </div>
+                            </div>
+                            <button class="view-details-btn">
+                                <span>查看详情</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-exams-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <h4>暂未创建任何考试</h4>
+                    <p>开始创建您的第一个考试，评估学生的学习成果</p>
+                    <a href="{% url 'teacher:create_exam' course.id %}" class="create-first-exam-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>创建第一个考试</span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 学生列表区域 -->
+        <div class="students-section" id="studentsSection" style="display: none;">
+            <div class="section-header">
+                <h3><i class="fas fa-users"></i> 学生管理</h3>
+                <p>查看和管理选修此课程的学生</p>
+            </div>
+            <div class="students-grid">
+                {% for student in course.students.all %}
+                <div class="student-card">
+                    <div class="student-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="student-info">
+                        <h5>{{ student.name }}</h5>
+                        <p>{{ student.student_id }}</p>
+                    </div>
+                    <div class="student-actions">
+                        <button class="action-btn-small" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn-small" title="发送消息">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-students-state">
+                    <i class="fas fa-user-plus"></i>
+                    <h5>暂无学生选修</h5>
+                    <p>等待学生选修此课程</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- 上传视频模态框 -->
+<div class="modal fade" id="uploadVideoModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-video modal-icon"></i>
+                    <div>
+                        <h5 class="modal-title">上传视频资源</h5>
+                        <p class="modal-subtitle">为课程添加新的视频内容</p>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="upload-area">
+                        <div class="upload-zone" id="videoUploadZone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>拖拽视频文件到此处</h4>
+                            <p>或点击选择文件</p>
+                            <input type="file" id="videoFile" name="video" accept="video/*" hidden>
+                        </div>
+                        <div class="file-info" id="videoFileInfo" style="display: none;">
+                            <i class="fas fa-file-video"></i>
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                        </div>
+                    </div>
+                    {% bootstrap_form video_form layout='horizontal' %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        <span>取消</span>
+                    </button>
+                    <button type="submit" name="video" class="btn-modern primary">
+                        <i class="fas fa-upload"></i>
+                        <span>上传视频</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 上传文档模态框 -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-file-alt modal-icon"></i>
+                    <div>
+                        <h5 class="modal-title">上传文档资料</h5>
+                        <p class="modal-subtitle">为课程添加新的文档内容</p>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="upload-area">
+                        <div class="upload-zone" id="documentUploadZone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>拖拽文档文件到此处</h4>
+                            <p>支持 PDF、DOC、DOCX、PPT、PPTX 格式</p>
+                            <input type="file" id="documentFile" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx" hidden>
+                        </div>
+                        <div class="file-info" id="documentFileInfo" style="display: none;">
+                            <i class="fas fa-file-pdf"></i>
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                        </div>
+                    </div>
+                    {% bootstrap_form document_form layout='horizontal' %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-modern secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        <span>取消</span>
+                    </button>
+                    <button type="submit" name="document" class="btn-modern primary">
+                        <i class="fas fa-upload"></i>
+                        <span>上传文档</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 课程详情页面样式 */
+:root {
+    --primary-color: #667eea;
+    --primary-light: #764ba2;
+    --secondary-color: #f093fb;
+    --accent-color: #4facfe;
+    --success-color: #00d4aa;
+    --warning-color: #ffb74d;
+    --danger-color: #ff5252;
+    --text-primary: #2d3748;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --bg-primary: #f7fafc;
+    --bg-secondary: #edf2f7;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+}
+
+/* 课程英雄区域 */
+.course-hero-section {
+    position: relative;
+    margin-bottom: 3rem;
+}
+
+.hero-background {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 4rem 0;
+}
+
+.course-breadcrumb {
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link:hover {
+    color: white;
+}
+
+.breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 0.5rem;
+}
+
+.breadcrumb-current {
+    color: white;
+    font-weight: 500;
+}
+
+.course-title {
+    color: white;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.course-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.course-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.course-meta.justify-content-center {
+    justify-content: center;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.meta-item i {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 统计卡片 */
+.course-stats-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-title {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* 快速操作栏 */
+.quick-actions-bar {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.actions-title h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.actions-title p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.actions-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+}
+
+.action-btn.secondary {
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    color: white;
+}
+
+.action-btn.success {
+    background: linear-gradient(135deg, var(--success-color), #00b894);
+    color: white;
+}
+
+.action-btn.info {
+    background: linear-gradient(135deg, var(--accent-color), #0984e3);
+    color: white;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+    text-decoration: none;
+}
+
+/* 课程资源区域 */
+.course-resources-section {
+    margin-bottom: 3rem;
+}
+
+.resource-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.resource-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.resource-header {
+    background: linear-gradient(135deg, var(--bg-secondary), #f1f5f9);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.resource-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.header-left h4 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-left p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.add-resource-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--success-color), #00b894);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-resource-btn:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-md);
+}
+
+.resource-content {
+    padding: 1.5rem;
+}
+
+.resource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.resource-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.resource-item:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateX(5px);
+}
+
+.resource-item-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent-color), #0984e3);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.resource-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.resource-item-info h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+}
+
+.resource-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.resource-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.resource-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.action-btn-small.preview {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+}
+
+.action-btn-small.edit {
+    background: rgba(255, 183, 77, 0.1);
+    color: var(--warning-color);
+}
+
+.action-btn-small.delete {
+    background: rgba(255, 82, 82, 0.1);
+    color: var(--danger-color);
+}
+
+.action-btn-small.download {
+    background: rgba(0, 212, 170, 0.1);
+    color: var(--success-color);
+}
+
+.action-btn-small:hover {
+    transform: scale(1.1);
+}
+
+.empty-resource-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.empty-resource-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-resource-state h5 {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+/* 考试管理区域 */
+.exams-management-section {
+    margin-bottom: 3rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-left h3 {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-left p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.create-exam-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--success-color), #00b894);
+    color: white;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.create-exam-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+    text-decoration: none;
+}
+
+.exams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.exam-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.exam-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.exam-card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+    background: rgba(0, 212, 170, 0.2);
+    color: var(--success-color);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+}
+
+.status-badge.ended {
+    background: rgba(255, 82, 82, 0.2);
+    color: var(--danger-color);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+.exam-actions-dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dropdown-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.exam-card-body {
+    padding: 1.5rem;
+}
+
+.exam-title {
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.exam-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.info-value {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.info-value.deadline {
+    color: var(--danger-color);
+}
+
+.info-value.score {
+    color: var(--success-color);
+}
+
+.exam-card-footer {
+    padding: 1rem 1.5rem;
+    background: var(--bg-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.exam-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.view-details-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-details-btn:hover {
+    transform: translateX(3px);
+}
+
+.empty-exams-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    margin-bottom: 1.5rem;
+}
+
+.empty-exams-state h4 {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.empty-exams-state p {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.create-first-exam-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.create-first-exam-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+    text-decoration: none;
+}
+
+/* 学生管理区域 */
+.students-section {
+    margin-bottom: 3rem;
+}
+
+.students-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.student-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.student-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.student-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.student-info {
+    flex: 1;
+}
+
+.student-info h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.student-info p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.student-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.empty-students-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.empty-students-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* 现代化模态框 */
+.modern-modal {
+    border-radius: var(--radius-lg);
+    border: none;
+    overflow: hidden;
+}
+
+.modern-modal .modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+    border: none;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modal-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-subtitle {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.upload-area {
+    margin-bottom: 2rem;
+}
+
+.upload-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-primary);
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-zone i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.upload-zone h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.upload-zone p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+}
+
+.file-info i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.file-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.file-size {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.btn-modern {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-modern.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    color: white;
+}
+
+.btn-modern.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 400px;
+    }
+
+    .exams-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .course-meta {
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .course-title {
+        font-size: 2rem;
+    }
+
+    .course-meta {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 300px;
+        gap: 1rem;
+    }
+
+    .quick-actions-bar {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .actions-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .section-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .exam-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .exam-card-footer {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .students-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content {
+        padding: 2rem 0;
+    }
+
+    .course-title {
+        font-size: 1.8rem;
+    }
+
+    .course-subtitle {
+        font-size: 1rem;
+    }
+
+    .course-meta {
+        gap: 0.75rem;
+    }
+
+    .meta-item {
+        font-size: 0.85rem;
+    }
+
+    .course-stats-card {
+        padding: 1.5rem 1rem;
+        margin: 0 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        max-width: 250px;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .action-btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .quick-actions-bar {
+        margin: 0 1rem;
+        padding: 1.5rem;
+    }
+
+    .resource-card,
+    .exam-card {
+        margin: 0 1rem;
+        border-radius: var(--radius-lg);
+    }
+}
+
+/* 动画效果 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.resource-card,
+.exam-card,
+.student-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.resource-card:nth-child(1) { animation-delay: 0.1s; }
+.resource-card:nth-child(2) { animation-delay: 0.2s; }
+.exam-card:nth-child(1) { animation-delay: 0.1s; }
+.exam-card:nth-child(2) { animation-delay: 0.2s; }
+.exam-card:nth-child(3) { animation-delay: 0.3s; }
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-light);
+}
+</style>
+
+<script>
+// 学生列表显示/隐藏
+function showStudentList() {
+    const studentsSection = document.getElementById('studentsSection');
+    if (studentsSection.style.display === 'none') {
+        studentsSection.style.display = 'block';
+        studentsSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        studentsSection.style.display = 'none';
+    }
+}
+
+// 文件上传拖拽功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 视频上传
+    const videoUploadZone = document.getElementById('videoUploadZone');
+    const videoFileInput = document.getElementById('videoFile');
+    const videoFileInfo = document.getElementById('videoFileInfo');
+
+    if (videoUploadZone && videoFileInput) {
+        videoUploadZone.addEventListener('click', () => videoFileInput.click());
+
+        videoUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            videoUploadZone.classList.add('dragover');
+        });
+
+        videoUploadZone.addEventListener('dragleave', () => {
+            videoUploadZone.classList.remove('dragover');
+        });
+
+        videoUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            videoUploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                videoFileInput.files = files;
+                showFileInfo(files[0], videoFileInfo);
+            }
+        });
+
+        videoFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                showFileInfo(e.target.files[0], videoFileInfo);
+            }
+        });
+    }
+
+    // 文档上传
+    const documentUploadZone = document.getElementById('documentUploadZone');
+    const documentFileInput = document.getElementById('documentFile');
+    const documentFileInfo = document.getElementById('documentFileInfo');
+
+    if (documentUploadZone && documentFileInput) {
+        documentUploadZone.addEventListener('click', () => documentFileInput.click());
+
+        documentUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            documentUploadZone.classList.add('dragover');
+        });
+
+        documentUploadZone.addEventListener('dragleave', () => {
+            documentUploadZone.classList.remove('dragover');
+        });
+
+        documentUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            documentUploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                documentFileInput.files = files;
+                showFileInfo(files[0], documentFileInfo);
+            }
+        });
+
+        documentFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                showFileInfo(e.target.files[0], documentFileInfo);
+            }
+        });
+    }
+
+    function showFileInfo(file, infoElement) {
+        const fileName = infoElement.querySelector('.file-name');
+        const fileSize = infoElement.querySelector('.file-size');
+
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        infoElement.style.display = 'flex';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+});
+</script>
 {% endblock %}

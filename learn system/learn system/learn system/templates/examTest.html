@@ -1,0 +1,137 @@
+<template>
+    <div class="exam-page">
+      <h1 class="title">{{ exam?.examName }}</h1>
+      <div class="exam-info">
+        <p><strong>试卷名称：</strong>{{ exam?.name }}</p>
+        <p><strong>出题老师：</strong>{{ exam?.teacher }}</p>
+        <p><strong>发布时间：</strong>{{ formatDate(exam?.releaseTime) }}</p>
+        <p><strong>截止时间：</strong>{{ formatDate(exam?.deadline) }}</p>
+      </div>
+      <div class="questions">
+        <div v-for="(question, index) in exam?.questions" :key="question.text" class="question">
+          <h3>{{ index + 1 }}. {{ question.text }} ({{ question.points }} 分)</h3>
+          <div class="options">
+            <label v-for="(option, optionIndex) in question.options" :key="option">
+              <input
+                type="radio"
+                :name="`question-${index}`"
+                :value="option"
+                v-model="question.selectedOptions"
+              />
+              {{ String.fromCharCode(65 + optionIndex) }}. {{ option }}
+            </label>
+          </div>
+        </div>
+      </div>
+      <button @click="submitExam" class="submit-button">提交试卷</button>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+    data() {
+      return {
+        exam: null // 初始化为 null
+      };
+    },
+    methods: {
+      formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      },
+      submitExam() {
+        let score = 0;
+        this.exam.questions.forEach((question) => {
+          // 确保 correctOptions 是数组
+          const correctOptions = Array.isArray(question.correctOptions) ? question.correctOptions : [question.correctOptions];
+          // 确保 selectedOptions 是字符串
+          const selectedOption = question.selectedOptions;
+          if (correctOptions.includes(selectedOption)) {
+            score += question.points;
+          }
+        });
+        alert(`您的得分是：${score}`);
+        this.$router.push({ name: 'ExamSelector' }); // 返回到试卷选择页面
+      }
+    },
+    mounted() {
+      const examData = this.$route.query.exam;
+      if (examData) {
+        try {
+          this.exam = JSON.parse(decodeURIComponent(examData)); // 解码并解析 JSON
+          // 确保每个问题的 correctOptions 是数组
+          this.exam.questions.forEach((question) => {
+            if (!Array.isArray(question.correctOptions)) {
+              question.correctOptions = [question.correctOptions];
+            }
+          });
+        } catch (error) {
+          console.error('Failed to parse exam data:', error);
+        }
+      } else {
+        console.error('Exam data is missing or invalid.');
+        this.$router.push({ name: 'ExamSelector' }); // 如果数据无效，返回到试卷选择页面
+      }
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .exam-page {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .title {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .exam-info {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .questions {
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .question {
+    margin-bottom: 20px;
+  }
+  
+  .options label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  
+  .options input {
+    margin-right: 5px;
+  }
+  
+  .submit-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  .submit-button:hover {
+    background-color: #0056b3;
+  }
+  </style>

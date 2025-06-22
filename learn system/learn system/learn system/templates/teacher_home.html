@@ -1,20 +1,483 @@
 {% extends 'base.html' %}
 {% load bootstrap3 %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/teacher_home.css' %}">
+{% endblock %}
 
 {% block content %}
-<h1>老师主页</h1>
-<form method="post" action="{% url 'teacher_course_create' %}">
-    {% csrf_token %}
-{#    {% bootstrap_form form layout='inline' %}#}
-    <input type="submit" value="创建新课程" class="btn btn-primary">
-</form>
-<h2>已创建的课程</h2>
-<ul class="list-group">
-    {% for course in courses %}
-        <li class="list-group-item">
-            <a href="{% url 'teacher_course_detail' course.id %}">{{ course.name }}</a>
-            <span class="badge">{{ course.code }}</span>
-        </li>
-    {% endfor %}
-</ul>
+<div class="teacher-dashboard container-fluid">
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- 个人信息卡片 -->
+        <div class="col-md-4">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar-container">
+                        <img id="teacher-avatar" src="{% static 'img/default-avatar.png' %}" alt="教师头像" class="profile-avatar-img">
+                        <div class="avatar-upload-overlay" onclick="triggerTeacherAvatarUpload()">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <input type="file" id="teacher-avatar-upload" accept="image/*" style="display: none;" onchange="uploadTeacherAvatar(this)">
+                    </div>
+                    <h2 id="teacher-display-name">{{ teacher_profile.name }}</h2>
+                    <p id="teacher-college">{{ teacher_profile.college }}</p>
+                    <p class="text-muted small">登录用户名: <span id="current-teacher-username">{{ username }}</span></p>
+                </div>
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <i class="fas fa-id-card"></i>
+                        <span>工号：<span id="teacher-id">{{ teacher_profile.teacher_id }}</span></span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-phone"></i>
+                        <span>联系方式：<span id="teacher-contact">{{ teacher_profile.contact }}</span></span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-envelope"></i>
+                        <span>邮箱：<span id="teacher-email">加载中...</span></span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-primary" onclick="refreshTeacherInfo()">
+                        <i class="fas fa-sync-alt"></i> 刷新信息
+                    </button>
+                </div>
+            </div>
+
+            <!-- 数据统计卡片 -->
+            <div class="stats-card">
+                <h3>教学统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h4>{{ courses.count }}</h4>
+                        <p>课程总数</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>{{ total_students }}</h4>
+                        <p>学生总数</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>{{ total_videos }}</h4>
+                        <p>视频资源</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>{{ total_documents }}</h4>
+                        <p>文档资源</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 课程管理区域 -->
+        <div class="col-md-8">
+            <div class="courses-section">
+                <div class="section-header">
+                    <h2>我的课程</h2>
+                    <form method="post" action="{% url 'teacher:teacher_course_create' %}" class="create-course-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> 创建新课程
+                        </button>
+                    </form>
+                </div>
+
+                {% if courses %}
+                    <div class="courses-grid">
+                        {% for course in courses %}
+                        <div class="course-card">
+                            <div class="course-header">
+                                <h3>{{ course.name }}</h3>
+                                <span class="course-code">{{ course.code }}</span>
+                            </div>
+                            <div class="course-body">
+                                <p>{{ course.description|truncatechars:100 }}</p>
+                            </div>
+                            <div class="course-footer">
+                                <div class="course-stats">
+                                    <span><i class="fas fa-users"></i> {{ course.students.count }}人</span>
+                                    <span><i class="fas fa-video"></i> {{ course.videos.count }}个视频</span>
+                                </div>
+                                <a href="{% url 'teacher:teacher_course_detail' course.id %}" class="btn btn-outline-primary">
+                                    详情 <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-courses-alert">
+                        <i class="fas fa-graduation-cap"></i>
+                        <p>您还没有创建任何课程</p>
+                        <p>点击上方"创建新课程"按钮开始您的教学之旅！</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<style>
+/* 教师头像样式 */
+.profile-avatar-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.profile-avatar-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--primary-color, #6366f1);
+    transition: all 0.3s ease;
+}
+
+.avatar-upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.profile-avatar-container:hover .avatar-upload-overlay {
+    opacity: 1;
+}
+
+.avatar-upload-overlay i {
+    color: white;
+    font-size: 1.8rem;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification-success { background-color: #10b981; }
+.notification-error { background-color: #ef4444; }
+.notification-warning { background-color: #f59e0b; }
+.notification-info { background-color: #3b82f6; }
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+</style>
+
+<script>
+// API配置
+const API_BASE_URL = 'http://lvrong.mynatapp.cc';
+
+// 页面加载时获取教师信息
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取当前登录的用户名（优先使用Django模板中的用户名）
+    let currentUsername = '{{ username }}';
+
+    // 检查是否有外部API的用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            // 如果有外部API的用户信息，使用API中的用户名
+            if (parsedUserInfo.username) {
+                currentUsername = parsedUserInfo.username;
+                // 更新页面显示的用户名
+                const usernameEl = document.getElementById('current-teacher-username');
+                if (usernameEl) {
+                    usernameEl.textContent = currentUsername;
+                }
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    // 如果有用户名，获取完整的教师信息
+    if (currentUsername && currentUsername.trim() !== '') {
+        fetchTeacherInfo(currentUsername);
+    }
+});
+
+// 获取教师信息
+async function fetchTeacherInfo(username) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/student/info?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if ((result.code === 200 || result.code === '200') && result.data && result.data.student) {
+                updateTeacherDisplay(result.data.student);
+            } else {
+                console.log('获取教师信息失败:', result.message || result.msg);
+                showDefaultTeacherInfo(username);
+            }
+        } else {
+            console.log('请求失败:', response.status);
+            showDefaultTeacherInfo(username);
+        }
+    } catch (error) {
+        console.error('获取教师信息出错:', error);
+        showDefaultTeacherInfo(username);
+    }
+}
+
+// 更新教师信息显示
+function updateTeacherDisplay(teacherData) {
+    // 更新教师姓名
+    const displayNameEl = document.getElementById('teacher-display-name');
+    if (displayNameEl) {
+        displayNameEl.textContent = teacherData.name || '未知教师';
+    }
+
+    // 更新工号
+    const teacherIdEl = document.getElementById('teacher-id');
+    if (teacherIdEl) {
+        teacherIdEl.textContent = teacherData.number || '未设置';
+    }
+
+    // 更新联系方式
+    const contactEl = document.getElementById('teacher-contact');
+    if (contactEl) {
+        contactEl.textContent = teacherData.telephone || '未设置';
+    }
+
+    // 更新学院
+    const collegeEl = document.getElementById('teacher-college');
+    if (collegeEl) {
+        collegeEl.textContent = teacherData.college || '未设置';
+    }
+
+    // 更新邮箱（如果有的话）
+    const emailEl = document.getElementById('teacher-email');
+    if (emailEl) {
+        emailEl.textContent = teacherData.email || '未设置';
+    }
+
+    // 更新头像
+    const avatarEl = document.getElementById('teacher-avatar');
+    if (avatarEl && teacherData.url) {
+        // 如果URL是相对路径，拼接API基础URL
+        const avatarUrl = teacherData.url.startsWith('http') ?
+            teacherData.url :
+            `${API_BASE_URL}${teacherData.url}`;
+        avatarEl.src = avatarUrl;
+        avatarEl.onerror = function() {
+            this.src = '{% static "img/default-avatar.png" %}';
+        };
+    }
+}
+
+// 显示默认教师信息
+function showDefaultTeacherInfo(username) {
+    const emailEl = document.getElementById('teacher-email');
+    if (emailEl) {
+        emailEl.textContent = '未获取到信息';
+    }
+}
+
+// 触发教师头像上传
+function triggerTeacherAvatarUpload() {
+    document.getElementById('teacher-avatar-upload').click();
+}
+
+// 上传教师头像
+async function uploadTeacherAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+        showNotification('请选择图片文件', 'error');
+        return;
+    }
+
+    // 检查文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('图片大小不能超过5MB', 'error');
+        return;
+    }
+
+    // 获取当前用户名（优先使用Django模板中的用户名）
+    let username = '{{ username }}';
+
+    // 检查是否有外部API的用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            if (parsedUserInfo.username) {
+                username = parsedUserInfo.username;
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    if (!username || username.trim() === '') {
+        showNotification('无法获取用户名', 'error');
+        return;
+    }
+
+    try {
+        // 创建FormData，以文件方式上传
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('file', file);
+
+        // 显示上传中状态
+        showNotification('正在上传头像...', 'info');
+
+        const response = await fetch(`${API_BASE_URL}/photo/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response) {
+            const result = await response.json();
+            if (result.code === 200 || result.code === 200) {
+                showNotification('头像上传成功！', 'success');
+                // 直接使用返回的图片路径更新头像
+                if (result.data) {
+                    const avatarEl = document.getElementById('teacher-avatar');
+                    if (avatarEl) {
+                        const avatarUrl = result.data.startsWith('http') ?
+                            result.data :
+                            `${API_BASE_URL}${result.data}`;
+                        avatarEl.src = avatarUrl;
+                    }
+                }
+                // 也重新获取教师信息以确保数据同步
+                fetchTeacherInfo(username);
+            } else {
+                showNotification(result.message || result.msg || '上传失败', 'error');
+            }
+        } else {
+            showNotification('上传请求失败', 'error');
+        }
+    } catch (error) {
+        console.error('上传头像出错:', error);
+        showNotification('上传出错，请重试', 'error');
+    }
+
+    // 清空input
+    input.value = '';
+}
+
+// 刷新教师信息
+function refreshTeacherInfo() {
+    // 获取当前用户名（优先使用Django模板中的用户名）
+    let username = '{{ username }}';
+
+    // 检查是否有外部API的用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            if (parsedUserInfo.username) {
+                username = parsedUserInfo.username;
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    if (username && username.trim() !== '') {
+        showNotification('正在刷新信息...', 'info');
+        fetchTeacherInfo(username);
+    } else {
+        showNotification('无法获取用户名', 'error');
+    }
+}
+
+// 显示通知
+function showNotification(message, type = 'info') {
+    // 移除现有通知
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // 创建新通知
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${getNotificationIcon(type)}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // 显示动画
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    // 自动隐藏
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'check-circle';
+        case 'error': return 'exclamation-circle';
+        case 'warning': return 'exclamation-triangle';
+        default: return 'info-circle';
+    }
+}
+
+
+</script>
+{% endblock %}
 {% endblock %}

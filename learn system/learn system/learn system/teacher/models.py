@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+from student.models import StudentProfile
 
 class TeacherProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -47,3 +49,30 @@ class Document(models.Model):
 
     def __str__(self):
         return self.name
+
+class Exam(models.Model):
+    name = models.CharField(max_length=100, verbose_name='考试名称')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='exams', verbose_name='关联课程')
+    teacher = models.ForeignKey(TeacherProfile, on_delete=models.CASCADE, related_name='exams', verbose_name='出题老师')
+    release_time = models.DateTimeField(default=timezone.now, verbose_name='发布时间')
+    deadline = models.DateTimeField(verbose_name='截止时间')
+    total_score = models.IntegerField(default=100, verbose_name='总分')
+
+    def __str__(self):
+        return f"{self.name} - {self.course.name}"
+
+class Question(models.Model):
+    QUESTION_TYPES = [
+        ('single_choice', '单选题'),
+        ('multiple_choice', '多选题'),
+    ]
+
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='questions', verbose_name='所属考试')
+    text = models.TextField(verbose_name='题目')
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='single_choice', verbose_name='题目类型')
+    options = models.JSONField(verbose_name='选项')
+    correct_options = models.JSONField(verbose_name='正确答案')
+    points = models.IntegerField(default=5, verbose_name='分值')
+
+    def __str__(self):
+        return f"{self.text[:50]} - {self.exam.name}"

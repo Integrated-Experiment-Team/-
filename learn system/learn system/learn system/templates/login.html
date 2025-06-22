@@ -1,46 +1,620 @@
 {% extends 'base.html' %}
-{% load bootstrap3 %}
 
-{% block show_back_button %}{% endblock %}
+{% block title %}登录 - 智学平台{% endblock %}
 
 {% block content %}
-<div class="center-wrapper">
-    <div class="login-container">
-        <h2 class="mb-4" style="color: var(--primary-color);">登录</h2>
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger" style="margin-bottom: 18px;">
-                {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
+<div class="login-container">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- 左侧装饰区域 -->
+            <div class="col-lg-7 d-none d-lg-flex login-decoration">
+                <div class="decoration-content">
+                    <div class="decoration-overlay"></div>
+                    <div class="decoration-text">
+                        <h1 class="display-3 fw-bold text-white mb-4">智学平台</h1>
+                        <p class="lead text-white mb-5">开启您的学习之旅，探索知识的无限可能</p>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <h5>丰富的课程资源</h5>
+                                    <p>精心设计的课程内容，满足不同学习需求</p>
+                                </div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <h5>互动学习社区</h5>
+                                    <p>与同学和老师实时交流，共同进步</p>
+                                </div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <h5>学习进度跟踪</h5>
+                                    <p>清晰的学习数据分析，掌握学习节奏</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        {% endif %}
-        <form method="post" action="{% url 'login' %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <input type="text" name="username" class="form-control" placeholder="用户名" required>
+
+            <!-- 右侧登录表单 -->
+            <div class="col-lg-5 d-flex align-items-center justify-content-center login-form-section">
+                <div class="login-form-container w-100">
+                    <div class="login-form-card">
+                        <!-- Logo和标题 -->
+                        <div class="text-center mb-5">
+                            <div class="logo-container mb-4">
+                                <i class="fas fa-graduation-cap logo-icon"></i>
+                            </div>
+                            <h2 class="login-title fw-bold mb-3">欢迎回来</h2>
+                            <p class="login-subtitle text-muted">登录您的智学平台账户</p>
+                        </div>
+
+                        <!-- 错误信息 -->
+                        {% if form.non_field_errors %}
+                            <div class="alert-custom alert-error mb-4">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- 登录表单 -->
+                        <form method="post" action="{% url 'login' %}" class="login-form">
+                            {% csrf_token %}
+
+                            <div class="form-group mb-4">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-2"></i>用户名
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text"
+                                           name="username"
+                                           id="username"
+                                           class="form-control"
+                                           placeholder="请输入用户名"
+                                           required>
+                                    <div class="input-focus-border"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-5">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>密码
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="password"
+                                           name="password"
+                                           id="password"
+                                           class="form-control"
+                                           placeholder="请输入密码"
+                                           required>
+                                    <div class="input-focus-border"></div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-login w-100 mb-5">
+                                <span class="btn-text">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    登录
+                                </span>
+                                <div class="btn-loading">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    登录中...
+                                </div>
+                            </button>
+                        </form>
+
+                        <!-- 分割线 -->
+                        <div class="divider">
+                            <span class="divider-text">还没有账号？</span>
+                        </div>
+
+                        <!-- 注册链接 -->
+                        <div class="register-section">
+                            <div class="register-buttons">
+                                <a href="{% url 'register' 'student' %}" class="btn-register student">
+                                    <div class="btn-register-icon">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                    <div class="btn-register-text">
+                                        <h6>学生注册</h6>
+                                        <small>开始您的学习之旅</small>
+                                    </div>
+                                </a>
+                                <a href="{% url 'register' 'teacher' %}" class="btn-register teacher">
+                                    <div class="btn-register-icon">
+                                        <i class="fas fa-chalkboard-teacher"></i>
+                                    </div>
+                                    <div class="btn-register-text">
+                                        <h6>教师注册</h6>
+                                        <small>分享您的知识</small>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- 底部信息 -->
+                        <div class="login-footer">
+                            <p class="security-text">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                您的信息安全受到保护
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <input type="password" name="password" class="form-control" placeholder="密码" required>
-            </div>
-        
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">登录</button>
-            </div>
-            <div class="register-links">
-                还没有账号？ 
-                <a href="{% url 'register' 'student' %}" style="color: var(--primary-color);">学生注册</a> | 
-                <a href="{% url 'register' 'teacher' %}" style="color: var(--primary-color);">教师注册</a>
-            </div>
-        </form>
-       
+        </div>
     </div>
 </div>
 
-<div class="footer">
-    © 2024 选课系统. All rights reserved.
-</div>
+<style>
+    /* 登录容器样式 */
+    .login-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-{% block extra_css %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-{% endblock %}
+    /* 左侧装饰区域 */
+    .login-decoration {
+        position: relative;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        overflow: hidden;
+    }
+
+    .decoration-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 3rem;
+    }
+
+    .decoration-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .decoration-text {
+        max-width: 500px;
+        text-align: left;
+    }
+
+    .feature-list {
+        margin-top: 3rem;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-lg);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .feature-item:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateX(10px);
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.5rem;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .feature-text h5 {
+        color: white;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .feature-text p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    /* 右侧表单区域 */
+    .login-form-section {
+        background: var(--bg-primary);
+        padding: 2rem;
+    }
+
+    .login-form-container {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    .login-form-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-xl);
+        padding: 3rem 2.5rem;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-color);
+    }
+
+    /* Logo样式 */
+    .logo-container {
+        position: relative;
+    }
+
+    .logo-icon {
+        font-size: 4rem;
+        color: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 4px 8px rgba(99, 102, 241, 0.3));
+    }
+
+    .login-title {
+        color: var(--text-primary);
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .login-subtitle {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+    }
+
+    /* 表单样式 */
+    .form-group {
+        position: relative;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: var(--bg-card);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .input-focus-border {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transition: width 0.3s ease;
+    }
+
+    .form-control:focus + .input-focus-border {
+        width: 100%;
+    }
+
+    /* 登录按钮样式 */
+    .btn-login {
+        position: relative;
+        width: 100%;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        border-radius: var(--radius-lg);
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    .btn-loading {
+        display: none;
+    }
+
+    .btn-login.loading .btn-text {
+        display: none;
+    }
+
+    .btn-login.loading .btn-loading {
+        display: block;
+    }
+
+    /* 分割线样式 */
+    .divider {
+        position: relative;
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--border-color);
+    }
+
+    .divider-text {
+        background: var(--bg-card);
+        padding: 0 1.5rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* 注册按钮样式 */
+    .register-section {
+        margin-bottom: 2rem;
+    }
+
+    .register-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .btn-register {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem 1rem;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+    }
+
+    .btn-register:hover {
+        border-color: var(--primary-color);
+        background: rgba(99, 102, 241, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .btn-register.student:hover {
+        border-color: var(--secondary-color);
+        background: rgba(16, 185, 129, 0.05);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-register-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .btn-register.student .btn-register-icon {
+        background: var(--secondary-color);
+    }
+
+    .btn-register-text h6 {
+        margin: 0 0 0.25rem 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .btn-register-text small {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+
+    /* 底部信息 */
+    .login-footer {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .security-text {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 991px) {
+        .login-form-section {
+            min-height: 100vh;
+        }
+
+        .login-form-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+        }
+
+        .login-title {
+            font-size: 1.75rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .login-form-section {
+            padding: 1rem;
+        }
+
+        .login-form-card {
+            padding: 1.5rem 1rem;
+        }
+
+        .register-buttons {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-register {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .btn-register-icon {
+            margin-right: 0.75rem;
+        }
+    }
+
+    /* 动画效果 */
+    .login-form-card {
+        animation: slideInRight 0.8s ease-out;
+    }
+
+    .feature-item {
+        animation: slideInLeft 0.8s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .feature-item:nth-child(1) { animation-delay: 0.2s; }
+    .feature-item:nth-child(2) { animation-delay: 0.4s; }
+    .feature-item:nth-child(3) { animation-delay: 0.6s; }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* 加载状态 */
+    .form-control:invalid {
+        border-color: var(--border-color);
+    }
+
+    .form-control:valid {
+        border-color: var(--secondary-color);
+    }
+
+    /* 深色模式适配 */
+    @media (prefers-color-scheme: dark) {
+        .login-form-section {
+            background: #1a1a1a;
+        }
+
+        .login-form-card {
+            background: #2a2a2a;
+            border-color: #404040;
+        }
+
+        .form-control {
+            background: #333;
+            border-color: #404040;
+            color: #fff;
+        }
+
+        .form-control:focus {
+            background: #2a2a2a;
+        }
+    }
+</style>
+
+<script>
+    // 表单提交加载状态
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.login-form');
+        const submitBtn = document.querySelector('.btn-login');
+
+        form.addEventListener('submit', function() {
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+        });
+
+        // 输入框焦点效果
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    });
+</script>
 {% endblock %}

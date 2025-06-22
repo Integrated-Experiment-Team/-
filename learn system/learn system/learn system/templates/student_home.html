@@ -1,57 +1,723 @@
 {% extends 'base.html' %}
-{% load bootstrap3 %}
-{% load static %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/student.css' %}" type="text/css">
-{% endblock %}
+{% block title %}学生主页 - 智学平台{% endblock %}
 
 {% block content %}
-<div class="student-container">
-    <div class="student-header">
-        <h1>学生主页</h1>
-    </div>
+<!-- 欢迎横幅 -->
+<div class="welcome-banner mb-5">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold mb-3" style="color: var(--text-primary);">
+                <i class="fas fa-sun me-3" style="color: var(--accent-color);"></i>
+                欢迎回来，<span id="current-username">{{ username }}</span>！
+            </h1>
+            <p class="lead text-muted mb-4">准备好开始今天的学习之旅了吗？</p>
 
-    <div class="course-search">
-        <form method="post" action="">
-            {% csrf_token %}
-            {% bootstrap_form form layout='inline' %}
-            <input type="submit" value="搜索" class="btn btn-primary">
-        </form>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="course-detail">
-                <h2>已选择的课程</h2>
-                <div class="course-list">
-                    {% for course in selected_courses %}
-                        <div class="course-card">
-                            <a href="{% url 'student_course_detail' course.id %}">{{ course.name }}</a>
-                            <span class="badge">{{ course.code }}</span>
+            <!-- 用户信息卡片 -->
+            <div class="card-custom p-4 mb-4" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1));">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <!-- 用户头像 -->
+                        <div class="user-avatar-container">
+                            <img id="user-avatar" src="https://via.placeholder.com/80x80/6366f1/ffffff?text=头像"
+                                 alt="用户头像" class="user-avatar">
+                            <div class="avatar-upload-overlay" onclick="triggerAvatarUpload()">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(this)">
                         </div>
-                    {% empty %}
-                        <p>暂未选择任何课程</p>
-                    {% endfor %}
+                    </div>
+                    <div class="col">
+                        <div class="user-info">
+                            <h5 class="mb-2 fw-bold" id="user-display-name">{{ username }}</h5>
+                            <div class="user-details">
+                                <div class="detail-row">
+                                    <i class="fas fa-id-card me-2"></i>
+                                    <span class="text-muted">学号：</span>
+                                    <span id="user-student-id" class="fw-medium">加载中...</span>
+                                </div>
+                                <div class="detail-row">
+                                    <i class="fas fa-phone me-2"></i>
+                                    <span class="text-muted">电话：</span>
+                                    <span id="user-phone" class="fw-medium">加载中...</span>
+                                </div>
+                                <div class="detail-row">
+                                    <i class="fas fa-university me-2"></i>
+                                    <span class="text-muted">学院：</span>
+                                    <span id="user-college" class="fw-medium">加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="login-status">
+                            {% if user_authenticated %}
+                                <span class="badge badge-success">
+                                    <i class="fas fa-user-check me-1"></i>
+                                    Django用户
+                                </span>
+                            {% else %}
+                                <span class="badge badge-primary">
+                                    <i class="fas fa-user-cog me-1"></i>
+                                    外部API用户
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-6">
-            <div class="course-detail">
-                <h2>其他可选择的课程</h2>
-                <div class="course-list">
-                    {% for course in other_courses %}
-                        <div class="course-card">
-                            <a href="{% url 'student_course_detail' course.id %}">{{ course.name }}</a>
-                            <span class="badge">{{ course.code }}</span>
-                        </div>
-                    {% empty %}
-                        <p>暂无可选课程</p>
-                    {% endfor %}
+            {% if error_message %}
+                <div class="alert-custom alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>注意:</strong> {{ error_message }}
                 </div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-center">
+            <div class="learning-illustration">
+                <i class="fas fa-graduation-cap" style="font-size: 6rem; color: var(--primary-light); opacity: 0.7;"></i>
             </div>
         </div>
     </div>
 </div>
+
+<!-- 课程部分 -->
+<div class="row mb-5">
+    <!-- 已选择的课程 -->
+    <div class="col-lg-6 mb-4">
+        <div class="section-header mb-4">
+            <h3 class="fw-bold d-flex align-items-center">
+                <i class="fas fa-bookmark me-3" style="color: var(--secondary-color);"></i>
+                我的课程
+            </h3>
+            <p class="text-muted">您已选择的课程</p>
+        </div>
+
+        <div class="courses-grid">
+            {% for course in selected_courses %}
+                <div class="course-card-modern mb-3">
+                    <div class="card-custom h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="course-icon">
+                                    <i class="fas fa-book-open" style="color: var(--secondary-color); font-size: 1.5rem;"></i>
+                                </div>
+                                <span class="badge" style="background-color: var(--secondary-color);">{{ course.code }}</span>
+                            </div>
+                            <h5 class="card-title fw-semibold mb-2">{{ course.name }}</h5>
+                            <p class="card-text text-muted small mb-3">点击查看课程详情</p>
+                            <a href="{% url 'student:student_course_detail' course.id %}"
+                               class="btn-custom btn-secondary-custom btn-sm">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                进入课程
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-book" style="font-size: 3rem; color: var(--text-muted); opacity: 0.5;"></i>
+                    <p class="text-muted mt-3">暂未选择任何课程</p>
+                    <p class="small text-muted">从右侧选择您感兴趣的课程</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 可选择的课程 -->
+    <div class="col-lg-6 mb-4">
+        <div class="section-header mb-4">
+            <h3 class="fw-bold d-flex align-items-center">
+                <i class="fas fa-plus-circle me-3" style="color: var(--primary-color);"></i>
+                发现课程
+            </h3>
+            <p class="text-muted">探索更多学习机会</p>
+        </div>
+
+        <div class="courses-grid">
+            {% for course in other_courses %}
+                <div class="course-card-modern mb-3">
+                    <div class="card-custom h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="course-icon">
+                                    <i class="fas fa-lightbulb" style="color: var(--primary-color); font-size: 1.5rem;"></i>
+                                </div>
+                                <span class="badge" style="background-color: var(--primary-color);">{{ course.code }}</span>
+                            </div>
+                            <h5 class="card-title fw-semibold mb-2">{{ course.name }}</h5>
+                            <p class="card-text text-muted small mb-3">点击了解更多信息</p>
+                            <a href="{% url 'student:student_course_detail' course.id %}"
+                               class="btn-custom btn-primary-custom btn-sm">
+                                <i class="fas fa-eye me-2"></i>
+                                查看详情
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-search" style="font-size: 3rem; color: var(--text-muted); opacity: 0.5;"></i>
+                    <p class="text-muted mt-3">暂无可选课程</p>
+                    <p class="small text-muted">请稍后再来查看</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 考试部分 -->
+<div class="exam-section">
+    <div class="section-header mb-4">
+        <h3 class="fw-bold d-flex align-items-center">
+            <i class="fas fa-clipboard-check me-3" style="color: var(--accent-color);"></i>
+            近期考试
+        </h3>
+        <p class="text-muted">把握考试机会，展示学习成果</p>
+    </div>
+
+    {% if current_exams %}
+        <div class="row">
+            {% for exam in current_exams %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="exam-card">
+                    <div class="card-custom h-100">
+                        <div class="card-body p-4">
+                            <!-- 考试状态指示器 -->
+                            <div class="exam-status mb-3">
+                                <span class="badge" style="background-color: var(--accent-color);">
+                                    <i class="fas fa-clock me-1"></i>
+                                    进行中
+                                </span>
+                            </div>
+
+                            <!-- 考试信息 -->
+                            <h5 class="card-title fw-semibold mb-3">{{ exam.name }}</h5>
+
+                            <div class="exam-details mb-4">
+                                <div class="detail-item mb-2">
+                                    <i class="fas fa-book me-2" style="color: var(--text-muted);"></i>
+                                    <span class="text-muted">课程：</span>
+                                    <span class="fw-medium">{{ exam.course.name }}</span>
+                                </div>
+                                <div class="detail-item mb-2">
+                                    <i class="fas fa-calendar-alt me-2" style="color: var(--text-muted);"></i>
+                                    <span class="text-muted">截止：</span>
+                                    <span class="fw-medium">{{ exam.deadline|date:"m月d日 H:i" }}</span>
+                                </div>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <a href="{% url 'student:student_exam_detail' exam.id %}"
+                               class="btn-custom btn-primary-custom w-100">
+                                <i class="fas fa-play me-2"></i>
+                                开始考试
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 查看更多考试 -->
+        <div class="text-center mt-4">
+            <a href="{% url 'student:student_exam_list' %}" class="btn-custom btn-secondary-custom">
+                <i class="fas fa-list me-2"></i>
+                查看所有考试
+            </a>
+        </div>
+    {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="card-custom p-5">
+                <i class="fas fa-clipboard-list" style="font-size: 4rem; color: var(--text-muted); opacity: 0.5;"></i>
+                <h5 class="mt-4 mb-3">暂无可参加的考试</h5>
+                <p class="text-muted mb-4">目前没有进行中的考试，请关注课程通知</p>
+                <a href="{% url 'student:student_exam_list' %}" class="btn-custom btn-secondary-custom">
+                    <i class="fas fa-search me-2"></i>
+                    查看考试列表
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    /* 欢迎横幅样式 */
+    .welcome-banner {
+        padding: 2rem 0;
+    }
+
+    .learning-illustration {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    /* 用户头像样式 */
+    .user-avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+        transition: all 0.3s ease;
+    }
+
+    .avatar-upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        cursor: pointer;
+    }
+
+    .user-avatar-container:hover .avatar-upload-overlay {
+        opacity: 1;
+    }
+
+    .avatar-upload-overlay i {
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    /* 用户信息样式 */
+    .user-info {
+        flex: 1;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    .detail-row i {
+        color: var(--primary-color);
+        width: 16px;
+    }
+
+    .login-status .badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .badge-success {
+        background-color: var(--secondary-color) !important;
+    }
+
+    .badge-primary {
+        background-color: var(--primary-color) !important;
+    }
+
+    /* 课程卡片样式 */
+    .course-card-modern .card-custom {
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .course-card-modern .card-custom:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .course-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: rgba(99, 102, 241, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 考试卡片样式 */
+    .exam-card .card-custom {
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--accent-color);
+    }
+
+    .exam-card .card-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .exam-status {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+    }
+
+    /* 空状态样式 */
+    .empty-state {
+        opacity: 0.8;
+    }
+
+    /* 按钮尺寸 */
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .welcome-banner {
+            text-align: center;
+        }
+
+        .learning-illustration {
+            margin-top: 2rem;
+        }
+
+        .display-5 {
+            font-size: 2rem;
+        }
+    }
+
+    /* 页面加载动画 */
+    .course-card-modern, .exam-card {
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .course-card-modern:nth-child(1) { animation-delay: 0.1s; }
+    .course-card-modern:nth-child(2) { animation-delay: 0.2s; }
+    .course-card-modern:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+// API配置
+const API_BASE_URL = 'http://lvrong.mynatapp.cc';
+
+// 页面加载时更新用户信息
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取当前登录的用户名（优先使用Django模板中的用户名）
+    let currentUsername = '{{ username }}';
+
+    // 检查是否有外部API的用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            // 如果有外部API的用户信息，使用API中的用户名
+            if (parsedUserInfo.username) {
+                currentUsername = parsedUserInfo.username;
+                // 更新页面显示的用户名
+                const usernameEl = document.getElementById('current-username');
+                if (usernameEl) {
+                    usernameEl.textContent = currentUsername;
+                }
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    // 如果有用户名，获取完整的用户信息
+    if (currentUsername && currentUsername.trim() !== '') {
+        fetchUserInfo(currentUsername);
+    }
+
+    // 添加卡片悬停效果
+    const cards = document.querySelectorAll('.card-custom');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+
+// 获取用户信息
+async function fetchUserInfo(username) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/student/info?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if ((result.code === 200 || result.code === '200') && result.data && result.data.student) {
+                updateUserDisplay(result.data.student);
+            } else {
+                console.log('获取用户信息失败:', result.message || result.msg);
+                showDefaultUserInfo(username);
+            }
+        } else {
+            console.log('请求失败:', response.status);
+            showDefaultUserInfo(username);
+        }
+    } catch (error) {
+        console.error('获取用户信息出错:', error);
+        showDefaultUserInfo(username);
+    }
+}
+
+// 更新用户信息显示
+function updateUserDisplay(studentData) {
+    // 更新用户名
+    const displayNameEl = document.getElementById('user-display-name');
+    if (displayNameEl) {
+        displayNameEl.textContent = studentData.name || '未知用户';
+    }
+
+    // 更新学号
+    const studentIdEl = document.getElementById('user-student-id');
+    if (studentIdEl) {
+        studentIdEl.textContent = studentData.number || '未设置';
+    }
+
+    // 更新电话
+    const phoneEl = document.getElementById('user-phone');
+    if (phoneEl) {
+        phoneEl.textContent = studentData.telephone || '未设置';
+    }
+
+    // 更新学院
+    const collegeEl = document.getElementById('user-college');
+    if (collegeEl) {
+        collegeEl.textContent = studentData.college || '未设置';
+    }
+
+    // 更新头像
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl && studentData.url) {
+        // 如果URL是相对路径，拼接API基础URL
+        const avatarUrl = studentData.url.startsWith('http') ?
+            studentData.url :
+            `${API_BASE_URL}${studentData.url}`;
+        avatarEl.src = avatarUrl;
+        avatarEl.onerror = function() {
+            this.src = 'https://via.placeholder.com/80x80/6366f1/ffffff?text=头像';
+        };
+    }
+}
+
+// 显示默认用户信息
+function showDefaultUserInfo(username) {
+    const displayNameEl = document.getElementById('user-display-name');
+    if (displayNameEl) {
+        displayNameEl.textContent = username || '未知用户';
+    }
+
+    const studentIdEl = document.getElementById('user-student-id');
+    if (studentIdEl) {
+        studentIdEl.textContent = '未获取到信息';
+    }
+
+    const phoneEl = document.getElementById('user-phone');
+    if (phoneEl) {
+        phoneEl.textContent = '未获取到信息';
+    }
+
+    const collegeEl = document.getElementById('user-college');
+    if (collegeEl) {
+        collegeEl.textContent = '未获取到信息';
+    }
+}
+
+// 触发头像上传
+function triggerAvatarUpload() {
+    document.getElementById('avatar-upload').click();
+}
+
+// 上传头像
+async function uploadAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+        showNotification('请选择图片文件', 'error');
+        return;
+    }
+
+    // 检查文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('图片大小不能超过5MB', 'error');
+        return;
+    }
+
+    // 获取当前用户名（优先使用Django模板中的用户名）
+    let username = '{{ username }}';
+
+    // 检查是否有外部API的用户信息
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            if (parsedUserInfo.username) {
+                username = parsedUserInfo.username;
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    if (!username || username.trim() === '') {
+        showNotification('无法获取用户名', 'error');
+        return;
+    }
+
+    try {
+        // 创建FormData，以文件方式上传
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('file', file);
+
+        // 显示上传中状态
+        showNotification('正在上传头像...', 'info');
+
+        const response = await fetch(`${API_BASE_URL}/photo/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.code === 200 || result.code === '200') {
+                showNotification('头像上传成功！', 'success');
+                // 直接使用返回的图片路径更新头像
+                if (result.data) {
+                    const avatarEl = document.getElementById('user-avatar');
+                    if (avatarEl) {
+                        const avatarUrl = result.data.startsWith('http') ?
+                            result.data :
+                            `${API_BASE_URL}${result.data}`;
+                        avatarEl.src = avatarUrl;
+                    }
+                }
+                // 也重新获取用户信息以确保数据同步
+                fetchUserInfo(username);
+            } else {
+                showNotification(result.message || result.msg || '上传失败', 'error');
+            }
+        } else {
+            showNotification('上传请求失败', 'error');
+        }
+    } catch (error) {
+        console.error('上传头像出错:', error);
+        showNotification('上传出错，请重试', 'error');
+    }
+
+    // 清空input
+    input.value = '';
+}
+
+
+
+// 显示通知
+function showNotification(message, type = 'info') {
+    // 移除现有通知
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // 创建新通知
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${getNotificationIcon(type)}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    // 添加样式
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        background-color: ${getNotificationColor(type)};
+    `;
+
+    document.body.appendChild(notification);
+
+    // 显示动画
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    // 自动隐藏
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'check-circle';
+        case 'error': return 'exclamation-circle';
+        case 'warning': return 'exclamation-triangle';
+        default: return 'info-circle';
+    }
+}
+
+function getNotificationColor(type) {
+    switch (type) {
+        case 'success': return '#10b981';
+        case 'error': return '#ef4444';
+        case 'warning': return '#f59e0b';
+        default: return '#3b82f6';
+    }
+}
+</script>
 {% endblock %}
