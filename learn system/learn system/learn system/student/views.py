@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 
 from teacher.models import Course, Exam
-from .forms import CourseSearchForm, StudentRegisterForm
+from .forms import CourseSearchForm, StudentRegisterForm, StudentProfileUpdateForm
 from .models import StudentProfile, ExamResult
 
 def index(request):
@@ -103,6 +103,18 @@ def student_info(request):
     student_profile = StudentProfile.objects.get(user=request.user)
     return render(request, 'student_info.html', {
         'student': student_profile
+    })
+
+@login_required
+def student_profile_edit(request):
+    """学生信息编辑页面"""
+    # 只处理GET请求，显示编辑表单
+    # POST请求由前端JavaScript直接调用API处理
+    form = StudentProfileUpdateForm()
+
+    return render(request, 'student_profile_edit.html', {
+        'form': form,
+        'username': request.user.username
     })
 
 def exam_list(request):

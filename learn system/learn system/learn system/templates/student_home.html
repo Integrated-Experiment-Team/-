@@ -50,18 +50,28 @@
                         </div>
                     </div>
                     <div class="col-auto">
-                        <div class="login-status">
-                            {% if user_authenticated %}
-                                <span class="badge badge-success">
-                                    <i class="fas fa-user-check me-1"></i>
-                                    Django用户
-                                </span>
-                            {% else %}
-                                <span class="badge badge-primary">
-                                    <i class="fas fa-user-cog me-1"></i>
-                                    外部API用户
-                                </span>
-                            {% endif %}
+                        <div class="user-actions d-flex flex-column gap-2">
+                            <div class="login-status">
+                                {% if user_authenticated %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-user-check me-1"></i>
+                                        Django用户
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-primary">
+                                        <i class="fas fa-user-cog me-1"></i>
+                                        外部API用户
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'student:student_profile_edit' %}" class="btn-custom btn-outline-primary btn-sm">
+                                <i class="fas fa-edit me-1"></i>
+                                编辑信息
+                            </a>
+                            <button onclick="refreshUserInfo()" class="btn-custom btn-outline-secondary btn-sm mt-2">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                刷新信息
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -333,6 +343,39 @@
         background-color: var(--primary-color) !important;
     }
 
+    /* 用户操作按钮样式 */
+    .user-actions {
+        align-items: flex-end;
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-outline-secondary {
+        border: 2px solid var(--text-muted);
+        color: var(--text-muted);
+        background: transparent;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background: var(--text-muted);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+
     /* 课程卡片样式 */
     .course-card-modern .card-custom {
         transition: all 0.3s ease;
@@ -451,6 +494,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 检查是否需要刷新用户信息（从编辑页面返回）
+    const needRefresh = localStorage.getItem('needRefreshUserInfo');
+    if (needRefresh === 'true') {
+        console.log('检测到需要刷新用户信息的标记');
+        localStorage.removeItem('needRefreshUserInfo'); // 清除标记
+        showNotification('正在更新用户信息...', 'info');
+    }
+
     // 如果有用户名，获取完整的用户信息
     if (currentUsername && currentUsername.trim() !== '') {
         fetchUserInfo(currentUsername);
@@ -469,8 +520,81 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// 页面获得焦点时重新获取用户信息（从其他页面返回时）
+window.addEventListener('focus', function() {
+    console.log('页面获得焦点，重新获取用户信息');
+    let currentUsername = '{{ username }}';
+
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            if (parsedUserInfo.username) {
+                currentUsername = parsedUserInfo.username;
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    if (currentUsername && currentUsername.trim() !== '') {
+        fetchUserInfo(currentUsername);
+    }
+});
+
+// 页面可见性变化时重新获取用户信息
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        console.log('页面变为可见，重新获取用户信息');
+        let currentUsername = '{{ username }}';
+
+        const userInfo = localStorage.getItem('userInfo');
+        if (userInfo) {
+            try {
+                const parsedUserInfo = JSON.parse(userInfo);
+                if (parsedUserInfo.username) {
+                    currentUsername = parsedUserInfo.username;
+                }
+            } catch (e) {
+                console.log('解析用户信息失败:', e);
+            }
+        }
+
+        if (currentUsername && currentUsername.trim() !== '') {
+            fetchUserInfo(currentUsername);
+        }
+    }
+});
+
+// 手动刷新用户信息
+function refreshUserInfo() {
+    console.log('手动刷新用户信息');
+    let currentUsername = '{{ username }}';
+
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+        try {
+            const parsedUserInfo = JSON.parse(userInfo);
+            if (parsedUserInfo.username) {
+                currentUsername = parsedUserInfo.username;
+            }
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
+        }
+    }
+
+    if (currentUsername && currentUsername.trim() !== '') {
+        // 显示刷新提示
+        showNotification('正在刷新用户信息...', 'info');
+        fetchUserInfo(currentUsername);
+    }
+}
+
 // 获取用户信息
 async function fetchUserInfo(username) {
+    console.log('开始获取用户信息，用户名:', username);
+    console.log('API URL:', `${API_BASE_URL}/student/info?username=${encodeURIComponent(username)}`);
+
     try {
         const response = await fetch(`${API_BASE_URL}/student/info?username=${encodeURIComponent(username)}`, {
             method: 'GET',
@@ -479,9 +603,14 @@ async function fetchUserInfo(username) {
             }
         });
 
+        console.log('响应状态:', response.status);
+
         if (response.ok) {
             const result = await response.json();
+            console.log('API返回结果:', result);
+
             if ((result.code === 200 || result.code === '200') && result.data && result.data.student) {
+                console.log('学生数据:', result.data.student);
                 updateUserDisplay(result.data.student);
             } else {
                 console.log('获取用户信息失败:', result.message || result.msg);
@@ -499,28 +628,41 @@ async function fetchUserInfo(username) {
 
 // 更新用户信息显示
 function updateUserDisplay(studentData) {
-    // 更新用户名
+    console.log('更新用户显示，数据:', studentData);
+
+    // 更新用户名（卡片中的显示名称）
     const displayNameEl = document.getElementById('user-display-name');
     if (displayNameEl) {
         displayNameEl.textContent = studentData.name || '未知用户';
+        console.log('更新显示名称:', studentData.name);
+    }
+
+    // 更新欢迎消息中的用户名
+    const welcomeNameEl = document.getElementById('current-username');
+    if (welcomeNameEl && studentData.name) {
+        welcomeNameEl.textContent = studentData.name;
+        console.log('更新欢迎消息:', studentData.name);
     }
 
     // 更新学号
     const studentIdEl = document.getElementById('user-student-id');
     if (studentIdEl) {
         studentIdEl.textContent = studentData.number || '未设置';
+        console.log('更新学号:', studentData.number);
     }
 
     // 更新电话
     const phoneEl = document.getElementById('user-phone');
     if (phoneEl) {
         phoneEl.textContent = studentData.telephone || '未设置';
+        console.log('更新电话:', studentData.telephone);
     }
 
     // 更新学院
     const collegeEl = document.getElementById('user-college');
     if (collegeEl) {
         collegeEl.textContent = studentData.college || '未设置';
+        console.log('更新学院:', studentData.college);
     }
 
     // 更新头像
@@ -534,6 +676,7 @@ function updateUserDisplay(studentData) {
         avatarEl.onerror = function() {
             this.src = 'https://via.placeholder.com/80x80/6366f1/ffffff?text=头像';
         };
+        console.log('更新头像:', avatarUrl);
     }
 }
 

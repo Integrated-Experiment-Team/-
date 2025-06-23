@@ -28,6 +28,51 @@ class StudentRegisterForm(UserCreationForm):
             student_profile.save()
         return user
 
+class StudentProfileUpdateForm(forms.Form):
+    """学生信息更新表单"""
+    name = forms.CharField(
+        max_length=50,
+        label='昵称',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入您的昵称'
+        })
+    )
+    number = forms.CharField(
+        max_length=20,
+        label='学号',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入学号'
+        })
+    )
+    telephone = forms.CharField(
+        max_length=20,
+        label='电话号码',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入电话号码'
+        })
+    )
+    college = forms.CharField(
+        max_length=50,
+        label='学院',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入学院名称'
+        })
+    )
+    url = forms.CharField(
+        max_length=200,
+        label='头像URL',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '头像URL（可选）',
+            'readonly': True
+        })
+    )
+
 
 from django import forms
 from teacher.models import Course
